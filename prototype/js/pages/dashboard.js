@@ -160,6 +160,21 @@ function renderDashboardPage() {
             </div>
         </div>
 
+        <!-- Holdings Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i class="fas fa-briefcase text-accent"></i>
+                    投資持倉明細
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="holdings-list" id="holdingsList">
+                    <!-- Holdings will be rendered here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Milestones -->
         <div class="milestones-section">
             <h4 class="mb-3">
@@ -191,6 +206,62 @@ function renderDashboardPage() {
                 padding-top: var(--space-lg);
                 border-top: 1px solid rgba(255,255,255,0.1);
             }
+            .holdings-list {
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-md);
+            }
+            .holding-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: var(--space-md);
+                background: rgba(255,255,255,0.03);
+                border-radius: var(--radius-md);
+                transition: background 0.2s;
+            }
+            .holding-item:hover {
+                background: rgba(255,255,255,0.06);
+            }
+            .holding-info {
+                display: flex;
+                align-items: center;
+                gap: var(--space-md);
+            }
+            .holding-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--bg-dark);
+                font-weight: bold;
+            }
+            .holding-name {
+                font-weight: 600;
+            }
+            .holding-weight {
+                font-size: 0.8rem;
+                color: var(--gray-400);
+            }
+            .holding-values {
+                text-align: right;
+            }
+            .holding-value {
+                font-weight: 600;
+                color: var(--accent);
+            }
+            .holding-gain {
+                font-size: 0.85rem;
+            }
+            .holding-gain.positive {
+                color: var(--success);
+            }
+            .holding-gain.negative {
+                color: var(--danger);
+            }
         </style>
     `;
 }
@@ -199,9 +270,16 @@ async function initDashboardPage() {
     logEvent('dashboard_page_viewed');
     
     try {
-        dashboardData = await API.getDashboardData();
+        // 優先使用 demoDataService 作為資料來源
+        if (typeof demoDataService !== 'undefined' && demoDataService.loaded) {
+            dashboardData = getDashboardDataFromService();
+        } else {
+            dashboardData = await API.getDashboardData();
+        }
+        
         updateDashboardUI();
         renderAssetChart();
+        renderHoldings();
         renderMilestones();
         
         // Show rebalancing alert randomly for demo
@@ -219,6 +297,88 @@ async function initDashboardPage() {
         console.error('Failed to load dashboard data:', error);
         showToast('error', '載入失敗', '無法載入儀表板資料');
     }
+}
+
+/**
+ * 從 demoDataService 獲取儀表板資料
+ */
+function getDashboardDataFromService() {
+    const customerId = 'cust_001';
+    const summary = demoDataService.getCustomerAccountSummary(customerId);
+    const holdings = demoDataService.getCustomerHoldings(customerId);
+    const goals = demoDataService.getCustomerGoals(customerId);
+    
+    // 計算總報酬率
+    const totalGain = holdings ? holdings.reduce((sum, h) => sum + h.unrealizedGain, 0) : 0;
+    const totalCost = holdings ? holdings.reduce((sum, h) => sum + (h.marketValue - h.unrealizedGain), 0) : 0;
+    const totalReturnPercent = totalCost > 0 ? ((totalGain / totalCost) * 100).toFixed(1) : 0;
+    
+    // 計算目標進度
+    const primaryGoal = goals && goals.length > 0 ? goals[0] : null;
+    const goalProgress = primaryGoal 
+        ? Math.round((primaryGoal.currentAmount / primaryGoal.targetAmount) * 100)
+        : 45;
+    
+    // 生成資產歷史資料（模擬）
+    const assetHistory = generateAssetHistory(summary ? summary.totalAssets : 5000000);
+    
+    return {
+        totalAssets: summary ? summary.totalAssets : 5000000,
+        totalReturn: totalReturnPercent,
+        goalProgress: goalProgress,
+        monthlyInvestment: 25000,
+        consecutiveDays: 156,
+        assetHistory: assetHistory,
+        milestones: [
+            { icon: '🎯', title: '開始投資之旅', description: '完成首次投資', achieved: true, date: '2025-03-15' },
+            { icon: '💰', title: '突破百萬資產', description: '總資產達到 100 萬', achieved: true, date: '2025-06-20' },
+            { icon: '📈', title: '首次獲利 10%', description: '投資報酬率達 10%', achieved: true, date: '2025-09-10' },
+            { icon: '🏆', title: '突破 500 萬', description: '總資產達到 500 萬', achieved: true, date: '2026-01-28' },
+            { icon: '🌟', title: '達成退休目標', description: '完成退休規劃目標', achieved: false, date: null }
+        ]
+    };
+}
+
+/**
+ * 生成資產歷史資料 - 一路向上穩定成長到 500 萬
+ */
+function generateAssetHistory(currentAssets) {
+    const history = [];
+    const months = ['2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12', '2026-01'];
+    
+    // 設定起始資產為 300 萬，展現突破 500 萬的成長軌跡
+    const startAssets = 3000000;
+    const totalGrowth = currentAssets - startAssets;
+    
+    months.forEach((month, index) => {
+        // 使用平滑曲線確保一路向上
+        const progress = index / (months.length - 1);
+        // 使用 ease-out 效果：開始快，後面趨緩接近目標
+        const easedProgress = 1 - Math.pow(1 - progress, 2);
+        
+        let value;
+        if (index === months.length - 1) {
+            // 最後一個月是當前資產（500萬）
+            value = currentAssets;
+        } else {
+            // 計算該月資產
+            const baseValue = startAssets + (totalGrowth * easedProgress);
+            // 確保每個月都比前一個月高
+            if (history.length > 0) {
+                const prevValue = history[history.length - 1].value;
+                value = Math.max(prevValue + 100000, baseValue); // 至少增加 10 萬
+            } else {
+                value = baseValue;
+            }
+        }
+        
+        history.push({
+            month: month,
+            value: Math.round(value)
+        });
+    });
+    
+    return history;
 }
 
 function updateDashboardUI() {
@@ -262,35 +422,107 @@ function renderAssetChart() {
     
     const data = dashboardData.assetHistory;
     const maxValue = Math.max(...data.map(d => d.value));
+    const minValue = Math.min(...data.map(d => d.value));
+    const padding = (maxValue - minValue) * 0.1; // 上下留白 10%
+    const adjustedMax = maxValue + padding;
+    const adjustedMin = minValue - padding;
+    const range = adjustedMax - adjustedMin;
     
-    // Create simple bar chart
-    let chartHTML = '<div class="chart-area" style="display: flex; align-items: flex-end; gap: 8px; height: 100%; padding: 20px;">';
+    // 格式化大數字為萬為單位
+    const formatChartValue = (value) => {
+        if (value >= 10000) {
+            return (value / 10000).toFixed(0) + '萬';
+        }
+        return value.toLocaleString();
+    };
     
-    data.forEach((item, index) => {
-        const height = (item.value / maxValue) * 100;
-        const isLast = index === data.length - 1;
-        
-        chartHTML += `
-            <div class="chart-bar-container" style="flex: 1; display: flex; flex-direction: column; align-items: center;">
-                <div class="chart-value" style="font-size: 0.7rem; color: var(--gray-500); margin-bottom: 4px;">
-                    ${formatNumber(item.value)}
-                </div>
-                <div class="chart-bar" style="
-                    width: 100%;
-                    height: ${height}%;
-                    background: ${isLast ? 'var(--accent)' : 'var(--secondary)'};
-                    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-                    min-height: 20px;
-                    transition: height 0.5s ease;
-                "></div>
-                <div class="chart-label" style="font-size: 0.7rem; color: var(--gray-600); margin-top: 4px;">
-                    ${item.month.split('-')[1]}月
-                </div>
-            </div>
-        `;
+    // SVG 折線圖設定
+    const svgWidth = 100; // 使用百分比寬度
+    const svgHeight = 250;
+    const chartPadding = { top: 30, right: 20, bottom: 40, left: 20 };
+    const chartWidth = data.length > 1 ? (svgWidth - chartPadding.left - chartPadding.right) : svgWidth;
+    const chartHeight = svgHeight - chartPadding.top - chartPadding.bottom;
+    
+    // 計算各點座標
+    const points = data.map((item, index) => {
+        const x = chartPadding.left + (index / (data.length - 1)) * chartWidth;
+        const y = chartPadding.top + chartHeight - ((item.value - adjustedMin) / range) * chartHeight;
+        return { x, y, value: item.value, month: item.month };
     });
     
-    chartHTML += '</div>';
+    // 建立折線路徑
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x}% ${p.y}`).join(' ');
+    
+    // 建立漸層填充區域路徑
+    const areaPath = `${linePath} L ${points[points.length - 1].x}% ${chartPadding.top + chartHeight} L ${points[0].x}% ${chartPadding.top + chartHeight} Z`;
+    
+    let chartHTML = `
+        <div class="line-chart-container" style="position: relative; width: 100%; height: ${svgHeight}px;">
+            <svg width="100%" height="${svgHeight}" style="overflow: visible;">
+                <!-- 漸層定義 -->
+                <defs>
+                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color: var(--secondary); stop-opacity: 1" />
+                        <stop offset="100%" style="stop-color: var(--accent); stop-opacity: 1" />
+                    </linearGradient>
+                    <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color: var(--secondary); stop-opacity: 0.3" />
+                        <stop offset="100%" style="stop-color: var(--secondary); stop-opacity: 0.05" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- 水平網格線 -->
+                ${[0, 0.25, 0.5, 0.75, 1].map(ratio => {
+                    const y = chartPadding.top + chartHeight * (1 - ratio);
+                    return `<line x1="${chartPadding.left}%" y1="${y}" x2="${100 - chartPadding.right}%" y2="${y}" 
+                            stroke="rgba(255,255,255,0.1)" stroke-dasharray="4,4" />`;
+                }).join('')}
+                
+                <!-- 填充區域 -->
+                <path d="${areaPath}" fill="url(#areaGradient)" />
+                
+                <!-- 折線 -->
+                <path d="${linePath}" fill="none" stroke="url(#lineGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                
+                <!-- 資料點 -->
+                ${points.map((p, i) => {
+                    const isLast = i === points.length - 1;
+                    return `
+                        <circle cx="${p.x}%" cy="${p.y}" r="${isLast ? 8 : 5}" 
+                                fill="${isLast ? 'var(--accent)' : 'var(--secondary)'}" 
+                                stroke="var(--bg-primary)" stroke-width="2"
+                                style="filter: ${isLast ? 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.5))' : 'none'};" />
+                    `;
+                }).join('')}
+                
+                <!-- 數值標籤 -->
+                ${points.map((p, i) => {
+                    const isLast = i === points.length - 1;
+                    return `
+                        <text x="${p.x}%" y="${p.y - 12}" 
+                              text-anchor="middle" 
+                              fill="${isLast ? 'var(--accent)' : 'var(--gray-400)'}" 
+                              font-size="12" 
+                              font-weight="${isLast ? '600' : '500'}">
+                            ${formatChartValue(p.value)}
+                        </text>
+                    `;
+                }).join('')}
+                
+                <!-- 月份標籤 -->
+                ${points.map((p, i) => `
+                    <text x="${p.x}%" y="${svgHeight - 10}" 
+                          text-anchor="middle" 
+                          fill="var(--gray-500)" 
+                          font-size="12" 
+                          font-weight="500">
+                        ${p.month.split('-')[1]}月
+                    </text>
+                `).join('')}
+            </svg>
+        </div>
+    `;
+    
     chartContainer.innerHTML = chartHTML;
 }
 
@@ -372,6 +604,58 @@ function dismissRebalanceAlert() {
     if (alert) {
         alert.style.display = 'none';
     }
+}
+
+/**
+ * 渲染持倉明細
+ */
+function renderHoldings() {
+    const container = document.getElementById('holdingsList');
+    if (!container) return;
+    
+    // 從 demoDataService 獲取持倉資料
+    let holdings = [];
+    if (typeof demoDataService !== 'undefined' && demoDataService.loaded) {
+        holdings = demoDataService.getCustomerHoldings('cust_001') || [];
+    }
+    
+    if (holdings.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted p-4">
+                <i class="fas fa-info-circle"></i>
+                目前沒有持倉資料
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = holdings.map((holding, index) => {
+        const gainClass = holding.unrealizedGain >= 0 ? 'positive' : 'negative';
+        const gainSign = holding.unrealizedGain >= 0 ? '+' : '';
+        const gainPercent = ((holding.unrealizedGain / (holding.marketValue - holding.unrealizedGain)) * 100).toFixed(2);
+        const iconColors = ['#d4af37', '#3498db', '#27ae60', '#9b59b6', '#e74c3c'];
+        const iconColor = iconColors[index % iconColors.length];
+        
+        return `
+            <div class="holding-item">
+                <div class="holding-info">
+                    <div class="holding-icon" style="background: linear-gradient(135deg, ${iconColor} 0%, ${iconColor}dd 100%);">
+                        ${holding.productName.charAt(0)}
+                    </div>
+                    <div>
+                        <div class="holding-name">${holding.productName}</div>
+                        <div class="holding-weight">佔比 ${(holding.weight * 100).toFixed(1)}%</div>
+                    </div>
+                </div>
+                <div class="holding-values">
+                    <div class="holding-value">${formatCurrency(holding.marketValue)}</div>
+                    <div class="holding-gain ${gainClass}">
+                        ${gainSign}${formatCurrency(holding.unrealizedGain)} (${gainSign}${gainPercent}%)
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // Export

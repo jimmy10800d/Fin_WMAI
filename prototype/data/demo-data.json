@@ -1,0 +1,1158 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-30T10:00:00Z",
+  "description": "Fin_WMAI Demo 資料集",
+
+  "customers": [
+    {
+      "id": "cust_001",
+      "name": "官大大",
+      "basicInfo": {
+        "age": 35,
+        "gender": "male",
+        "occupation": "軟體工程師",
+        "industry": "科技業",
+        "employmentStatus": "正職",
+        "yearsEmployed": 8,
+        "education": "碩士",
+        "maritalStatus": "已婚",
+        "dependents": 1,
+        "residenceType": "自有房屋",
+        "city": "台北市"
+      },
+      "incomeExpense": {
+        "monthlyIncome": 120000,
+        "annualIncome": 1680000,
+        "incomeStability": "穩定",
+        "incomeGrowthRate": 0.05,
+        "monthlyExpense": 65000,
+        "monthlyFixedExpense": 45000,
+        "monthlyVariableExpense": 20000,
+        "monthlySavings": 55000,
+        "savingsRate": 0.46,
+        "hasEmergencyFund": true,
+        "emergencyFundMonths": 6
+      },
+      "cashflowIndicators": {
+        "debtToIncomeRatio": 0.25,
+        "liquidityRatio": 2.5,
+        "savingsRatio": 0.46,
+        "investmentRatio": 0.15,
+        "fixedExpenseRatio": 0.375,
+        "financialHealthScore": 78
+      },
+      "tags": [
+        "新手投資者",
+        "穩健型",
+        "科技業",
+        "雙薪家庭",
+        "有房貸",
+        "中高收入"
+      ]
+    },
+    {
+      "id": "cust_002",
+      "name": "林小萌",
+      "basicInfo": {
+        "age": 28,
+        "gender": "female",
+        "occupation": "行銷專員",
+        "industry": "消費品",
+        "employmentStatus": "正職",
+        "yearsEmployed": 4,
+        "education": "學士",
+        "maritalStatus": "未婚",
+        "dependents": 0,
+        "residenceType": "租屋",
+        "city": "新北市"
+      },
+      "incomeExpense": {
+        "monthlyIncome": 55000,
+        "annualIncome": 770000,
+        "incomeStability": "穩定",
+        "incomeGrowthRate": 0.08,
+        "monthlyExpense": 38000,
+        "monthlyFixedExpense": 20000,
+        "monthlyVariableExpense": 18000,
+        "monthlySavings": 17000,
+        "savingsRate": 0.31,
+        "hasEmergencyFund": true,
+        "emergencyFundMonths": 3
+      },
+      "cashflowIndicators": {
+        "debtToIncomeRatio": 0.05,
+        "liquidityRatio": 1.8,
+        "savingsRatio": 0.31,
+        "investmentRatio": 0.08,
+        "fixedExpenseRatio": 0.36,
+        "financialHealthScore": 65
+      },
+      "tags": [
+        "初入職場",
+        "積極型",
+        "租屋族",
+        "單身",
+        "成長潛力"
+      ]
+    },
+    {
+      "id": "cust_003",
+      "name": "陳阿福",
+      "basicInfo": {
+        "age": 52,
+        "gender": "male",
+        "occupation": "部門主管",
+        "industry": "製造業",
+        "employmentStatus": "正職",
+        "yearsEmployed": 25,
+        "education": "學士",
+        "maritalStatus": "已婚",
+        "dependents": 2,
+        "residenceType": "自有房屋",
+        "city": "台中市"
+      },
+      "incomeExpense": {
+        "monthlyIncome": 150000,
+        "annualIncome": 2100000,
+        "incomeStability": "非常穩定",
+        "incomeGrowthRate": 0.02,
+        "monthlyExpense": 90000,
+        "monthlyFixedExpense": 55000,
+        "monthlyVariableExpense": 35000,
+        "monthlySavings": 60000,
+        "savingsRate": 0.40,
+        "hasEmergencyFund": true,
+        "emergencyFundMonths": 12
+      },
+      "cashflowIndicators": {
+        "debtToIncomeRatio": 0.15,
+        "liquidityRatio": 4.2,
+        "savingsRatio": 0.40,
+        "investmentRatio": 0.25,
+        "fixedExpenseRatio": 0.37,
+        "financialHealthScore": 85
+      },
+      "tags": [
+        "資深投資者",
+        "保守型",
+        "製造業",
+        "接近退休",
+        "高淨值"
+      ]
+    }
+  ],
+
+  "accounts": [
+    {
+      "customerId": "cust_001",
+      "accounts": [
+        {
+          "accountId": "acc_001_01",
+          "type": "checking",
+          "typeName": "活期存款",
+          "currency": "TWD",
+          "balance": 650000,
+          "availableBalance": 650000,
+          "lastUpdated": "2026-01-30T08:00:00Z"
+        },
+        {
+          "accountId": "acc_001_02",
+          "type": "savings",
+          "typeName": "定期存款",
+          "currency": "TWD",
+          "balance": 1200000,
+          "interestRate": 0.015,
+          "maturityDate": "2026-06-30",
+          "lastUpdated": "2026-01-30T08:00:00Z"
+        },
+        {
+          "accountId": "acc_001_03",
+          "type": "investment",
+          "typeName": "投資帳戶",
+          "currency": "TWD",
+          "totalValue": 3150000,
+          "costBasis": 2850000,
+          "unrealizedGain": 300000,
+          "unrealizedGainPercent": 0.1053,
+          "holdings": [
+            {
+              "productId": "fund_001",
+              "productName": "全球股票型基金A",
+              "units": 28000,
+              "avgCost": 35.5,
+              "currentPrice": 38.2,
+              "marketValue": 1069600,
+              "unrealizedGain": 75600,
+              "weight": 0.34
+            },
+            {
+              "productId": "fund_002",
+              "productName": "新興市場債券基金B",
+              "units": 45000,
+              "avgCost": 15.8,
+              "currentPrice": 16.5,
+              "marketValue": 742500,
+              "unrealizedGain": 31500,
+              "weight": 0.236
+            },
+            {
+              "productId": "fund_003",
+              "productName": "投資級債券基金C",
+              "units": 38000,
+              "avgCost": 16.0,
+              "currentPrice": 16.8,
+              "marketValue": 638400,
+              "unrealizedGain": 30400,
+              "weight": 0.203
+            },
+            {
+              "productId": "fund_004",
+              "productName": "貨幣市場基金D",
+              "units": 40000,
+              "avgCost": 10.0,
+              "currentPrice": 10.02,
+              "marketValue": 400800,
+              "unrealizedGain": 800,
+              "weight": 0.127
+            },
+            {
+              "productId": "fund_006",
+              "productName": "科技創新成長基金",
+              "units": 8000,
+              "avgCost": 32.0,
+              "currentPrice": 37.34,
+              "marketValue": 298720,
+              "unrealizedGain": 42720,
+              "weight": 0.095
+            }
+          ],
+          "lastUpdated": "2026-01-30T08:00:00Z"
+        },
+        {
+          "accountId": "acc_001_04",
+          "type": "loan",
+          "typeName": "房屋貸款",
+          "currency": "TWD",
+          "principalBalance": -1000000,
+          "interestRate": 0.0185,
+          "monthlyPayment": 15000,
+          "remainingTermMonths": 72,
+          "lastUpdated": "2026-01-30T08:00:00Z"
+        }
+      ],
+      "summary": {
+        "totalAssets": 5000000,
+        "totalLiabilities": 1000000,
+        "netWorth": 4000000,
+        "liquidAssets": 1850000,
+        "investmentAssets": 3150000
+      }
+    },
+    {
+      "customerId": "cust_002",
+      "accounts": [
+        {
+          "accountId": "acc_002_01",
+          "type": "checking",
+          "typeName": "活期存款",
+          "currency": "TWD",
+          "balance": 125000,
+          "availableBalance": 125000,
+          "lastUpdated": "2026-01-30T08:00:00Z"
+        },
+        {
+          "accountId": "acc_002_02",
+          "type": "investment",
+          "typeName": "投資帳戶",
+          "currency": "TWD",
+          "totalValue": 280000,
+          "costBasis": 250000,
+          "unrealizedGain": 30000,
+          "unrealizedGainPercent": 0.12,
+          "holdings": [
+            {
+              "productId": "etf_001",
+              "productName": "台灣50 ETF",
+              "units": 1500,
+              "avgCost": 120,
+              "currentPrice": 135,
+              "marketValue": 202500,
+              "unrealizedGain": 22500,
+              "weight": 0.723
+            },
+            {
+              "productId": "fund_005",
+              "productName": "科技成長基金",
+              "units": 2500,
+              "avgCost": 28,
+              "currentPrice": 31,
+              "marketValue": 77500,
+              "unrealizedGain": 7500,
+              "weight": 0.277
+            }
+          ],
+          "lastUpdated": "2026-01-30T08:00:00Z"
+        }
+      ],
+      "summary": {
+        "totalAssets": 405000,
+        "totalLiabilities": 0,
+        "netWorth": 405000,
+        "liquidAssets": 125000,
+        "investmentAssets": 280000
+      }
+    }
+  ],
+
+  "transactions": [
+    {
+      "customerId": "cust_001",
+      "transactions": [
+        {
+          "txId": "tx_001_001",
+          "date": "2026-01-28",
+          "type": "buy",
+          "typeName": "買入",
+          "productId": "fund_001",
+          "productName": "全球股票型基金A",
+          "units": 500,
+          "price": 38.0,
+          "amount": 19000,
+          "fee": 95,
+          "channel": "app",
+          "orderType": "regular",
+          "status": "completed"
+        },
+        {
+          "txId": "tx_001_002",
+          "date": "2026-01-28",
+          "type": "buy",
+          "typeName": "買入",
+          "productId": "fund_002",
+          "productName": "新興市場債券基金B",
+          "units": 400,
+          "price": 16.5,
+          "amount": 6600,
+          "fee": 33,
+          "channel": "app",
+          "orderType": "regular",
+          "status": "completed"
+        },
+        {
+          "txId": "tx_001_003",
+          "date": "2026-01-15",
+          "type": "buy",
+          "typeName": "定期定額",
+          "productId": "fund_001",
+          "productName": "全球股票型基金A",
+          "units": 135,
+          "price": 37.0,
+          "amount": 5000,
+          "fee": 25,
+          "channel": "auto",
+          "orderType": "recurring",
+          "status": "completed"
+        },
+        {
+          "txId": "tx_001_004",
+          "date": "2025-12-28",
+          "type": "rebalance",
+          "typeName": "再平衡",
+          "details": [
+            { "action": "sell", "productId": "fund_001", "units": 200, "amount": 7400 },
+            { "action": "buy", "productId": "fund_003", "units": 440, "amount": 7400 }
+          ],
+          "reason": "股票部位超過目標配置5%，觸發再平衡",
+          "channel": "auto",
+          "status": "completed"
+        },
+        {
+          "txId": "tx_001_005",
+          "date": "2025-12-15",
+          "type": "buy",
+          "typeName": "定期定額",
+          "productId": "fund_001",
+          "productName": "全球股票型基金A",
+          "units": 138,
+          "price": 36.2,
+          "amount": 5000,
+          "fee": 25,
+          "channel": "auto",
+          "orderType": "recurring",
+          "status": "completed"
+        }
+      ],
+      "tradingBehavior": {
+        "tradingFrequency": "monthly",
+        "averageOrderSize": 15000,
+        "preferredChannel": "app",
+        "hasRecurringPlan": true,
+        "recurringAmount": 10000,
+        "recurringDay": 15,
+        "rebalanceFrequency": "quarterly",
+        "lastRebalanceDate": "2025-12-28",
+        "holdingPeriodAvg": 365,
+        "panicSellHistory": 0,
+        "investmentConsistency": 0.95
+      }
+    },
+    {
+      "customerId": "cust_002",
+      "transactions": [
+        {
+          "txId": "tx_002_001",
+          "date": "2026-01-20",
+          "type": "buy",
+          "typeName": "買入",
+          "productId": "etf_001",
+          "productName": "台灣50 ETF",
+          "units": 100,
+          "price": 134,
+          "amount": 13400,
+          "fee": 20,
+          "channel": "app",
+          "orderType": "single",
+          "status": "completed"
+        },
+        {
+          "txId": "tx_002_002",
+          "date": "2026-01-05",
+          "type": "buy",
+          "typeName": "定期定額",
+          "productId": "fund_005",
+          "productName": "科技成長基金",
+          "units": 180,
+          "price": 30.5,
+          "amount": 5490,
+          "fee": 27,
+          "channel": "auto",
+          "orderType": "recurring",
+          "status": "completed"
+        }
+      ],
+      "tradingBehavior": {
+        "tradingFrequency": "monthly",
+        "averageOrderSize": 8000,
+        "preferredChannel": "app",
+        "hasRecurringPlan": true,
+        "recurringAmount": 5000,
+        "recurringDay": 5,
+        "rebalanceFrequency": "never",
+        "holdingPeriodAvg": 180,
+        "panicSellHistory": 0,
+        "investmentConsistency": 0.85
+      }
+    }
+  ],
+
+  "products": [
+    {
+      "productId": "fund_001",
+      "name": "全球股票型基金A",
+      "shortName": "全球股票A",
+      "type": "mutualFund",
+      "category": "equity",
+      "subCategory": "global",
+      "currency": "TWD",
+      "nav": 38.2,
+      "navDate": "2026-01-29",
+      "investmentCharacteristics": {
+        "riskLevel": 4,
+        "riskLabel": "中高風險",
+        "volatility": "medium-high",
+        "expectedReturn": "6-10%",
+        "investmentHorizon": "5年以上",
+        "liquidity": "高",
+        "minimumInvestment": 3000,
+        "minimumRecurring": 1000
+      },
+      "educationalInfo": {
+        "description": "投資於全球主要市場的大型績優股，透過分散投資降低單一市場風險。適合追求長期資本增值的投資人。",
+        "suitableFor": ["長期投資", "資本增值", "通膨對沖"],
+        "notSuitableFor": ["短期資金需求", "保本需求"],
+        "keyRisks": ["市場風險", "匯率風險", "產業集中風險"],
+        "historicalPerformance": {
+          "ytd": 0.052,
+          "1year": 0.125,
+          "3year": 0.285,
+          "5year": 0.456
+        }
+      },
+      "complianceConditions": {
+        "kycRequired": true,
+        "minRiskScore": 40,
+        "minAge": 20,
+        "maxAge": null,
+        "suitabilityProfile": ["穩健型", "積極型", "激進型"],
+        "excludedCustomerTags": ["保守型", "退休族群-低風險"],
+        "requiresDisclosure": true,
+        "disclosureTemplate": "DISC_EQUITY_FUND_001"
+      },
+      "fees": {
+        "managementFee": 0.015,
+        "subscriptionFee": 0.005,
+        "redemptionFee": 0,
+        "performanceFee": 0
+      },
+      "status": "active",
+      "approvedDate": "2024-01-15"
+    },
+    {
+      "productId": "fund_002",
+      "name": "新興市場債券基金B",
+      "shortName": "新興債B",
+      "type": "mutualFund",
+      "category": "bond",
+      "subCategory": "emerging-market",
+      "currency": "TWD",
+      "nav": 16.5,
+      "navDate": "2026-01-29",
+      "investmentCharacteristics": {
+        "riskLevel": 3,
+        "riskLabel": "中度風險",
+        "volatility": "medium",
+        "expectedReturn": "4-7%",
+        "investmentHorizon": "3-5年",
+        "liquidity": "中高",
+        "minimumInvestment": 3000,
+        "minimumRecurring": 1000
+      },
+      "educationalInfo": {
+        "description": "投資於新興市場政府及企業債券，提供較高收益率。適合願意承擔適度風險以追求收益的投資人。",
+        "suitableFor": ["收益需求", "分散配置", "中期投資"],
+        "notSuitableFor": ["極度保守", "短期資金"],
+        "keyRisks": ["信用風險", "匯率風險", "利率風險", "流動性風險"],
+        "historicalPerformance": {
+          "ytd": 0.032,
+          "1year": 0.068,
+          "3year": 0.145,
+          "5year": 0.225
+        }
+      },
+      "complianceConditions": {
+        "kycRequired": true,
+        "minRiskScore": 30,
+        "minAge": 20,
+        "maxAge": null,
+        "suitabilityProfile": ["穩健型", "積極型", "激進型"],
+        "excludedCustomerTags": ["極度保守"],
+        "requiresDisclosure": true,
+        "disclosureTemplate": "DISC_BOND_EM_001"
+      },
+      "fees": {
+        "managementFee": 0.012,
+        "subscriptionFee": 0.003,
+        "redemptionFee": 0.001,
+        "performanceFee": 0
+      },
+      "status": "active",
+      "approvedDate": "2024-03-20"
+    },
+    {
+      "productId": "fund_003",
+      "name": "投資級債券基金C",
+      "shortName": "投資債C",
+      "type": "mutualFund",
+      "category": "bond",
+      "subCategory": "investment-grade",
+      "currency": "TWD",
+      "nav": 16.8,
+      "navDate": "2026-01-29",
+      "investmentCharacteristics": {
+        "riskLevel": 2,
+        "riskLabel": "低中風險",
+        "volatility": "low-medium",
+        "expectedReturn": "3-5%",
+        "investmentHorizon": "2-3年",
+        "liquidity": "高",
+        "minimumInvestment": 3000,
+        "minimumRecurring": 1000
+      },
+      "educationalInfo": {
+        "description": "投資於全球投資等級公司債及政府債，追求穩定收益與資本保護。適合追求穩定現金流的投資人。",
+        "suitableFor": ["穩定收益", "資本保護", "退休規劃"],
+        "notSuitableFor": ["追求高報酬"],
+        "keyRisks": ["利率風險", "信用風險"],
+        "historicalPerformance": {
+          "ytd": 0.018,
+          "1year": 0.042,
+          "3year": 0.098,
+          "5year": 0.165
+        }
+      },
+      "complianceConditions": {
+        "kycRequired": true,
+        "minRiskScore": 15,
+        "minAge": 20,
+        "maxAge": null,
+        "suitabilityProfile": ["保守型", "穩健型", "積極型", "激進型"],
+        "excludedCustomerTags": [],
+        "requiresDisclosure": true,
+        "disclosureTemplate": "DISC_BOND_IG_001"
+      },
+      "fees": {
+        "managementFee": 0.008,
+        "subscriptionFee": 0.002,
+        "redemptionFee": 0,
+        "performanceFee": 0
+      },
+      "status": "active",
+      "approvedDate": "2023-08-10"
+    },
+    {
+      "productId": "fund_004",
+      "name": "貨幣市場基金D",
+      "shortName": "貨幣D",
+      "type": "mutualFund",
+      "category": "moneyMarket",
+      "subCategory": "twd",
+      "currency": "TWD",
+      "nav": 10.02,
+      "navDate": "2026-01-29",
+      "investmentCharacteristics": {
+        "riskLevel": 1,
+        "riskLabel": "低風險",
+        "volatility": "very-low",
+        "expectedReturn": "1-2%",
+        "investmentHorizon": "隨時",
+        "liquidity": "極高",
+        "minimumInvestment": 1000,
+        "minimumRecurring": 500
+      },
+      "educationalInfo": {
+        "description": "投資於短期貨幣市場工具，提供接近定存的收益率，同時保持高度流動性。適合作為現金停泊處或緊急預備金。",
+        "suitableFor": ["現金管理", "緊急預備金", "短期資金"],
+        "notSuitableFor": ["追求資本增值"],
+        "keyRisks": ["極低風險"],
+        "historicalPerformance": {
+          "ytd": 0.003,
+          "1year": 0.015,
+          "3year": 0.042,
+          "5year": 0.075
+        }
+      },
+      "complianceConditions": {
+        "kycRequired": false,
+        "minRiskScore": 0,
+        "minAge": 18,
+        "maxAge": null,
+        "suitabilityProfile": ["保守型", "穩健型", "積極型", "激進型"],
+        "excludedCustomerTags": [],
+        "requiresDisclosure": false,
+        "disclosureTemplate": null
+      },
+      "fees": {
+        "managementFee": 0.003,
+        "subscriptionFee": 0,
+        "redemptionFee": 0,
+        "performanceFee": 0
+      },
+      "status": "active",
+      "approvedDate": "2022-01-05"
+    },
+    {
+      "productId": "etf_001",
+      "name": "台灣50 ETF",
+      "shortName": "0050",
+      "type": "etf",
+      "category": "equity",
+      "subCategory": "taiwan",
+      "currency": "TWD",
+      "nav": 135,
+      "navDate": "2026-01-29",
+      "investmentCharacteristics": {
+        "riskLevel": 4,
+        "riskLabel": "中高風險",
+        "volatility": "medium-high",
+        "expectedReturn": "6-12%",
+        "investmentHorizon": "5年以上",
+        "liquidity": "極高",
+        "minimumInvestment": 1,
+        "minimumRecurring": 1
+      },
+      "educationalInfo": {
+        "description": "追蹤台灣50指數，投資台灣市值前50大公司。低成本指數投資，適合長期持有。",
+        "suitableFor": ["長期投資", "被動投資", "核心配置"],
+        "notSuitableFor": ["短期投機"],
+        "keyRisks": ["市場風險", "集中風險"],
+        "historicalPerformance": {
+          "ytd": 0.065,
+          "1year": 0.158,
+          "3year": 0.352,
+          "5year": 0.485
+        }
+      },
+      "complianceConditions": {
+        "kycRequired": true,
+        "minRiskScore": 35,
+        "minAge": 20,
+        "maxAge": null,
+        "suitabilityProfile": ["穩健型", "積極型", "激進型"],
+        "excludedCustomerTags": ["保守型"],
+        "requiresDisclosure": true,
+        "disclosureTemplate": "DISC_ETF_EQUITY_001"
+      },
+      "fees": {
+        "managementFee": 0.0032,
+        "subscriptionFee": 0,
+        "redemptionFee": 0,
+        "performanceFee": 0
+      },
+      "status": "active",
+      "approvedDate": "2020-06-15"
+    },
+    {
+      "productId": "fund_005",
+      "name": "科技成長基金",
+      "shortName": "科技成長",
+      "type": "mutualFund",
+      "category": "equity",
+      "subCategory": "technology",
+      "currency": "TWD",
+      "nav": 31,
+      "navDate": "2026-01-29",
+      "investmentCharacteristics": {
+        "riskLevel": 5,
+        "riskLabel": "高風險",
+        "volatility": "high",
+        "expectedReturn": "8-15%",
+        "investmentHorizon": "5年以上",
+        "liquidity": "高",
+        "minimumInvestment": 3000,
+        "minimumRecurring": 1000
+      },
+      "educationalInfo": {
+        "description": "投資於全球科技產業領導企業，追求長期資本增值。波動較大但長期成長潛力高。",
+        "suitableFor": ["長期成長", "科技趨勢", "高風險承受"],
+        "notSuitableFor": ["保守投資人", "短期資金需求"],
+        "keyRisks": ["市場風險", "產業集中風險", "波動風險"],
+        "historicalPerformance": {
+          "ytd": 0.085,
+          "1year": 0.225,
+          "3year": 0.425,
+          "5year": 0.685
+        }
+      },
+      "complianceConditions": {
+        "kycRequired": true,
+        "minRiskScore": 55,
+        "minAge": 20,
+        "maxAge": 60,
+        "suitabilityProfile": ["積極型", "激進型"],
+        "excludedCustomerTags": ["保守型", "穩健型", "接近退休"],
+        "requiresDisclosure": true,
+        "disclosureTemplate": "DISC_EQUITY_TECH_001"
+      },
+      "fees": {
+        "managementFee": 0.018,
+        "subscriptionFee": 0.005,
+        "redemptionFee": 0,
+        "performanceFee": 0
+      },
+      "status": "active",
+      "approvedDate": "2024-02-28"
+    }
+  ],
+
+  "customerGoals": [
+    {
+      "customerId": "cust_001",
+      "goals": [
+        {
+          "goalId": "goal_001_01",
+          "type": "retirement",
+          "typeName": "退休金",
+          "icon": "🏖️",
+          "targetAmount": 10000000,
+          "currentAmount": 1568000,
+          "targetDate": "2041-01-01",
+          "remainingYears": 15,
+          "monthlyContribution": 15000,
+          "expectedReturnRate": 0.06,
+          "gapAnalysis": {
+            "projectedAmount": 8500000,
+            "gap": 1500000,
+            "gapPercent": 0.15,
+            "requiredMonthlyIncrease": 3500,
+            "onTrack": false
+          },
+          "status": "in-progress",
+          "createdAt": "2025-03-15T10:00:00Z",
+          "updatedAt": "2026-01-15T14:30:00Z"
+        },
+        {
+          "goalId": "goal_001_02",
+          "type": "education",
+          "typeName": "子女教育金",
+          "icon": "🎓",
+          "targetAmount": 3000000,
+          "currentAmount": 450000,
+          "targetDate": "2038-09-01",
+          "remainingYears": 12,
+          "monthlyContribution": 8000,
+          "expectedReturnRate": 0.055,
+          "gapAnalysis": {
+            "projectedAmount": 2850000,
+            "gap": 150000,
+            "gapPercent": 0.05,
+            "requiredMonthlyIncrease": 500,
+            "onTrack": true
+          },
+          "status": "in-progress",
+          "createdAt": "2025-06-20T09:00:00Z",
+          "updatedAt": "2026-01-20T11:00:00Z"
+        }
+      ],
+      "recommendations": [
+        {
+          "recommendationId": "rec_001_01",
+          "goalId": "goal_001_01",
+          "date": "2026-01-25",
+          "allocation": [
+            { "productId": "fund_001", "productName": "全球股票型基金A", "percent": 40 },
+            { "productId": "fund_002", "productName": "新興市場債券基金B", "percent": 25 },
+            { "productId": "fund_003", "productName": "投資級債券基金C", "percent": 20 },
+            { "productId": "fund_004", "productName": "貨幣市場基金D", "percent": 15 }
+          ],
+          "rationale": "根據您的穩健型風險屬性和15年期的退休金目標，我們建議採用股債混合的配置策略。這種配置方式就像一支平衡的籃球隊——既有進攻能力（股票），也有穩固的防守（債券），能在各種市場環境下保持競爭力。",
+          "riskScenario": "在一般市場波動情況下，您的投資組合可能在短期內出現5-15%的價值變動。這就像搭乘長途飛機時遇到的氣流顛簸，雖然會有起伏，但只要保持航向，最終會安全抵達目的地。",
+          "worstCase": "在極端市場情況下（如2008年金融海嘯或2020年疫情初期），您的投資組合最大可能損失約25-30%。但歷史經驗顯示，採用定期定額策略的投資者，在市場回升後通常能獲得更好的長期報酬。",
+          "notes": [
+            "建議持有期間至少3-5年",
+            "每季度檢視一次配置比例",
+            "可設定±5%的再平衡觸發點",
+            "定期定額能有效降低進場時機的風險"
+          ],
+          "sourceRef": "DOC-2026-001-v2.3 / 核准產品池 2026Q1",
+          "status": "accepted",
+          "acceptedAt": "2026-01-25T15:30:00Z"
+        }
+      ],
+      "feedback": [
+        {
+          "feedbackId": "fb_001_01",
+          "recommendationId": "rec_001_01",
+          "date": "2026-01-25",
+          "accepted": true,
+          "acceptanceRate": 1.0,
+          "comments": "建議很清楚易懂，我願意按照這個方案執行",
+          "clarificationRequested": false
+        },
+        {
+          "feedbackId": "fb_001_02",
+          "recommendationId": "rec_001_01",
+          "date": "2026-01-20",
+          "type": "clarification",
+          "originalText": "您的投資組合 Sharpe Ratio 約為 0.8",
+          "clarificationRequest": "什麼是 Sharpe Ratio？",
+          "simplifiedResponse": "Sharpe Ratio 可以理解為「每承擔一分風險，能得到多少報酬」的指標。0.8 代表您的投資組合在風險和報酬之間取得不錯的平衡，就像開車時既不會太慢讓人著急，也不會太快有危險。"
+        }
+      ]
+    },
+    {
+      "customerId": "cust_002",
+      "goals": [
+        {
+          "goalId": "goal_002_01",
+          "type": "travel",
+          "typeName": "環遊世界",
+          "icon": "✈️",
+          "targetAmount": 500000,
+          "currentAmount": 120000,
+          "targetDate": "2028-12-01",
+          "remainingYears": 3,
+          "monthlyContribution": 12000,
+          "expectedReturnRate": 0.07,
+          "gapAnalysis": {
+            "projectedAmount": 520000,
+            "gap": 0,
+            "gapPercent": 0,
+            "requiredMonthlyIncrease": 0,
+            "onTrack": true
+          },
+          "status": "in-progress",
+          "createdAt": "2025-09-01T14:00:00Z",
+          "updatedAt": "2026-01-28T16:00:00Z"
+        }
+      ],
+      "recommendations": [],
+      "feedback": []
+    }
+  ],
+
+  "complianceKnowledge": {
+    "riskProfiles": [
+      {
+        "profileId": "risk_conservative",
+        "name": "保守型",
+        "scoreRange": [0, 25],
+        "description": "追求資本保護，願意接受較低報酬以換取穩定性",
+        "suitableProducts": ["moneyMarket", "investment-grade-bond"],
+        "maxEquityAllocation": 0.10,
+        "maxHighRiskAllocation": 0,
+        "rebalanceThreshold": 0.03
+      },
+      {
+        "profileId": "risk_moderate",
+        "name": "穩健型",
+        "scoreRange": [26, 55],
+        "description": "願意承擔適度風險以追求較佳報酬，重視長期穩健成長",
+        "suitableProducts": ["moneyMarket", "bond", "balanced", "equity"],
+        "maxEquityAllocation": 0.50,
+        "maxHighRiskAllocation": 0.20,
+        "rebalanceThreshold": 0.05
+      },
+      {
+        "profileId": "risk_aggressive",
+        "name": "積極型",
+        "scoreRange": [56, 80],
+        "description": "願意承擔較高風險以追求較高報酬，有較長投資期限",
+        "suitableProducts": ["bond", "equity", "emerging-market", "sector"],
+        "maxEquityAllocation": 0.75,
+        "maxHighRiskAllocation": 0.40,
+        "rebalanceThreshold": 0.07
+      },
+      {
+        "profileId": "risk_very_aggressive",
+        "name": "激進型",
+        "scoreRange": [81, 100],
+        "description": "追求最大化報酬，能夠承受高度波動和潛在虧損",
+        "suitableProducts": ["equity", "emerging-market", "sector", "alternative"],
+        "maxEquityAllocation": 1.0,
+        "maxHighRiskAllocation": 0.60,
+        "rebalanceThreshold": 0.10
+      }
+    ],
+    "suitabilityRules": [
+      {
+        "ruleId": "suit_001",
+        "name": "風險等級限制",
+        "description": "產品風險等級不得超過客戶可接受風險等級",
+        "logic": "product.riskLevel <= customer.riskLevel",
+        "action": "block",
+        "message": "此產品風險等級超過您的風險承受度，建議考慮風險較低的替代方案"
+      },
+      {
+        "ruleId": "suit_002",
+        "name": "年齡限制",
+        "description": "特定高風險產品有年齡上限",
+        "logic": "customer.age <= product.maxAge OR product.maxAge IS NULL",
+        "action": "block",
+        "message": "依據內部規範，此產品不適合您目前的年齡族群"
+      },
+      {
+        "ruleId": "suit_003",
+        "name": "收入穩定度檢核",
+        "description": "不穩定收入客戶限制高風險配置",
+        "logic": "IF customer.incomeStability = 'unstable' THEN maxEquityAllocation = 0.30",
+        "action": "adjust",
+        "message": "考量您的收入穩定度，建議降低股票配置比例"
+      },
+      {
+        "ruleId": "suit_004",
+        "name": "緊急預備金檢核",
+        "description": "無緊急預備金客戶優先建立安全網",
+        "logic": "IF customer.emergencyFundMonths < 3 THEN recommend emergency fund first",
+        "action": "recommend",
+        "message": "建議您先建立至少3個月的緊急預備金，再開始積極投資"
+      },
+      {
+        "ruleId": "suit_005",
+        "name": "負債比例檢核",
+        "description": "高負債比例客戶限制投資金額",
+        "logic": "IF customer.debtToIncomeRatio > 0.40 THEN flag for review",
+        "action": "flag",
+        "message": "您的負債比例較高，建議諮詢理財專員評估整體財務規劃"
+      }
+    ],
+    "disclosureTemplates": [
+      {
+        "templateId": "DISC_EQUITY_FUND_001",
+        "name": "股票型基金風險揭露",
+        "requiredAcknowledgement": true,
+        "content": {
+          "title": "股票型基金投資風險揭露",
+          "sections": [
+            {
+              "heading": "投資風險",
+              "content": "本基金投資於股票市場，可能因市場波動導致投資本金損失。過去績效不代表未來表現。"
+            },
+            {
+              "heading": "最大可能損失",
+              "content": "在極端市場情況下，本基金淨值可能下跌30-50%。投資人應有心理準備承受短期波動。"
+            },
+            {
+              "heading": "適合投資人",
+              "content": "適合風險承受度中高以上、投資期限5年以上的投資人。"
+            },
+            {
+              "heading": "費用說明",
+              "content": "本基金收取申購手續費、管理費及保管費，詳見公開說明書。"
+            }
+          ],
+          "acknowledgementText": "我已閱讀並理解上述風險揭露內容，了解投資可能產生本金損失"
+        }
+      },
+      {
+        "templateId": "DISC_BOND_EM_001",
+        "name": "新興市場債券基金風險揭露",
+        "requiredAcknowledgement": true,
+        "content": {
+          "title": "新興市場債券基金投資風險揭露",
+          "sections": [
+            {
+              "heading": "投資風險",
+              "content": "本基金投資於新興市場債券，面臨信用風險、利率風險及匯率風險。"
+            },
+            {
+              "heading": "最大可能損失",
+              "content": "在極端情況下，本基金淨值可能下跌20-35%。新興市場波動較成熟市場為大。"
+            },
+            {
+              "heading": "適合投資人",
+              "content": "適合風險承受度中等以上、投資期限3年以上的投資人。"
+            }
+          ],
+          "acknowledgementText": "我已閱讀並理解上述風險揭露內容"
+        }
+      }
+    ],
+    "regulatoryRules": [
+      {
+        "ruleId": "reg_001",
+        "name": "KYC 必要性",
+        "description": "投資任何非貨幣市場基金前必須完成 KYC 問卷",
+        "source": "金管會銀行局規定",
+        "enforcement": "mandatory"
+      },
+      {
+        "ruleId": "reg_002",
+        "name": "適合度評估",
+        "description": "銷售金融商品前應確認符合客戶風險屬性",
+        "source": "金融消費者保護法",
+        "enforcement": "mandatory"
+      },
+      {
+        "ruleId": "reg_003",
+        "name": "風險揭露義務",
+        "description": "銷售金融商品前應充分揭露產品風險",
+        "source": "銀行業公平待客原則",
+        "enforcement": "mandatory"
+      },
+      {
+        "ruleId": "reg_004",
+        "name": "冷靜期規定",
+        "description": "特定保險商品有7天冷靜期",
+        "source": "保險法規定",
+        "enforcement": "conditional"
+      }
+    ]
+  },
+
+  "marketInfo": {
+    "lastUpdated": "2026-01-30T09:00:00Z",
+    "source": "內部投資研究部",
+    "indices": [
+      {
+        "name": "台灣加權指數",
+        "symbol": "TWSE",
+        "value": 19850.25,
+        "change": 125.50,
+        "changePercent": 0.0064,
+        "timestamp": "2026-01-30T09:00:00Z"
+      },
+      {
+        "name": "S&P 500",
+        "symbol": "SPX",
+        "value": 5125.80,
+        "change": -12.30,
+        "changePercent": -0.0024,
+        "timestamp": "2026-01-30T05:00:00Z"
+      },
+      {
+        "name": "MSCI 新興市場",
+        "symbol": "EEM",
+        "value": 42.85,
+        "change": 0.35,
+        "changePercent": 0.0082,
+        "timestamp": "2026-01-30T05:00:00Z"
+      }
+    ],
+    "economicIndicators": [
+      {
+        "name": "台灣央行基準利率",
+        "value": 2.0,
+        "unit": "%",
+        "lastUpdate": "2025-12-19",
+        "trend": "stable"
+      },
+      {
+        "name": "台灣 CPI 年增率",
+        "value": 2.1,
+        "unit": "%",
+        "lastUpdate": "2026-01-15",
+        "trend": "declining"
+      },
+      {
+        "name": "美國聯邦基金利率",
+        "value": 4.50,
+        "unit": "%",
+        "lastUpdate": "2026-01-29",
+        "trend": "stable"
+      }
+    ],
+    "investmentReports": [
+      {
+        "reportId": "rpt_2026_01_01",
+        "title": "2026年第一季投資展望",
+        "date": "2026-01-15",
+        "author": "投資研究部",
+        "summary": "預期全球經濟溫和成長，通膨壓力持續緩解。建議維持股債均衡配置，適度增加亞太區域曝險。",
+        "keyPoints": [
+          "全球經濟預期成長 2.8%",
+          "美國降息循環可能於下半年啟動",
+          "亞洲新興市場具投資吸引力",
+          "建議逐步增加債券部位"
+        ],
+        "assetAllocationView": {
+          "equity": { "view": "neutral", "weight": "45%" },
+          "bond": { "view": "overweight", "weight": "40%" },
+          "alternatives": { "view": "neutral", "weight": "10%" },
+          "cash": { "view": "underweight", "weight": "5%" }
+        }
+      },
+      {
+        "reportId": "rpt_2026_01_02",
+        "title": "科技產業趨勢報告",
+        "date": "2026-01-20",
+        "author": "產業研究組",
+        "summary": "AI 應用持續擴散，半導體需求維持強勁。惟須注意評價偏高風險。",
+        "keyPoints": [
+          "AI 相關支出持續成長",
+          "半導體庫存調整接近尾聲",
+          "雲端服務需求回溫",
+          "注意科技股評價已偏高"
+        ],
+        "recommendation": "選擇性布局，避免追高"
+      }
+    ],
+    "alerts": [
+      {
+        "alertId": "alert_001",
+        "type": "info",
+        "title": "市場動態提醒",
+        "message": "美國聯準會將於2月召開利率決策會議，預期維持利率不變。",
+        "timestamp": "2026-01-30T08:00:00Z",
+        "expiresAt": "2026-02-02T00:00:00Z"
+      },
+      {
+        "alertId": "alert_002",
+        "type": "warning",
+        "title": "波動性提醒",
+        "message": "近期市場波動度上升，建議投資人維持紀律，避免恐慌操作。",
+        "timestamp": "2026-01-29T15:00:00Z",
+        "expiresAt": "2026-02-05T00:00:00Z"
+      }
+    ]
+  }
+}

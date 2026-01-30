@@ -12,11 +12,14 @@
     <link rel="stylesheet" href="css/pages.css">
 </head>
 <body>
-    <!-- Loading Overlay -->
+    <!-- Loading Overlay with Intro Video -->
     <div class="loading-overlay" id="loadingOverlay">
-        <img src="../IP_ICON/IP_THINKING.png" alt="載入中" class="loading-mascot">
-        <div class="spinner"></div>
-        <p>正在為您準備最佳體驗...</p>
+        <video id="introVideo" class="loading-video" autoplay muted playsinline>
+            <source src="IP_ICON/Intro.mp4" type="video/mp4">
+            <!-- Fallback image if video not supported -->
+            <img src="IP_ICON/IP_THINKING.png" alt="載入中" class="loading-mascot">
+        </video>
+        <p class="loading-text">正在為您準備最佳體驗...</p>
     </div>
 
     <div class="app-wrapper">
@@ -105,63 +108,126 @@
 
     <!-- Risk Disclosure Modal -->
     <div class="modal-overlay" id="riskDisclosureModal">
-        <div class="modal modal-lg">
-            <div class="modal-header">
+        <div class="modal modal-lg risk-disclosure-modal">
+            <div class="modal-header risk-modal-header">
+                <div class="risk-header-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
                 <h3 class="modal-title">
                     <i class="fas fa-exclamation-triangle text-warning"></i>
-                    風險揭露聲明
+                    投資風險揭露聲明
                 </h3>
+                <p class="risk-subtitle">請仔細閱讀以下重要資訊</p>
             </div>
-            <div class="modal-body">
+            <div class="modal-body risk-modal-body" id="riskDisclosureContent">
                 <div class="risk-disclosure-content">
-                    <div class="alert alert-warning">
+                    <!-- 投資警語 -->
+                    <div class="alert alert-warning risk-warning-banner">
                         <span class="alert-icon"><i class="fas fa-exclamation-circle"></i></span>
                         <div>
-                            <strong>投資警語</strong>
-                            <p class="mb-0">投資一定有風險，基金投資有賺有賠，申購前應詳閱公開說明書。</p>
+                            <strong>⚠️ 投資警語</strong>
+                            <p class="mb-0">投資一定有風險，基金投資有賺有賠，申購前應詳閱公開說明書。過往績效不代表未來表現。</p>
+                        </div>
+                    </div>
+
+                    <!-- 客戶風險屬性顯示 -->
+                    <div class="customer-risk-profile" id="customerRiskProfile">
+                        <h4><i class="fas fa-user-shield"></i> 您的風險屬性</h4>
+                        <div class="risk-profile-card">
+                            <div class="risk-profile-badge" id="riskProfileBadge">
+                                <span class="risk-grade">穩健型</span>
+                            </div>
+                            <div class="risk-profile-info">
+                                <p id="riskProfileDesc">願意承擔適度風險以追求較佳報酬，重視長期穩健成長</p>
+                                <div class="risk-limits">
+                                    <span><i class="fas fa-chart-pie"></i> 股票配置上限: <strong id="maxEquity">50%</strong></span>
+                                    <span><i class="fas fa-fire"></i> 高風險配置上限: <strong id="maxHighRisk">20%</strong></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <h4 class="mt-3">最壞狀況說明</h4>
+                    <!-- 最壞狀況說明 -->
+                    <h4 class="section-title"><i class="fas fa-exclamation-triangle text-danger"></i> 最壞狀況說明</h4>
                     <div class="worst-case-box">
                         <div class="worst-case-item">
-                            <i class="fas fa-chart-line-down text-danger"></i>
+                            <div class="worst-case-icon danger">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
                             <div>
                                 <strong>市場下跌風險</strong>
-                                <p>投資組合可能因市場波動而出現 20-30% 的短期損失</p>
+                                <p>在極端市場情況下（如2008年金融海嘯），投資組合可能出現 <span class="text-danger">25-40%</span> 的短期損失</p>
                             </div>
                         </div>
                         <div class="worst-case-item">
-                            <i class="fas fa-clock text-warning"></i>
+                            <div class="worst-case-icon warning">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div>
+                                <strong>匯率風險</strong>
+                                <p>投資海外標的可能因匯率波動而影響實際報酬，匯率變動可達 <span class="text-warning">5-15%</span></p>
+                            </div>
+                        </div>
+                        <div class="worst-case-item">
+                            <div class="worst-case-icon info">
+                                <i class="fas fa-clock"></i>
+                            </div>
                             <div>
                                 <strong>流動性風險</strong>
-                                <p>部分投資標的可能需要較長時間才能贖回</p>
+                                <p>部分投資標的可能需要較長時間才能贖回，建議預留緊急預備金</p>
                             </div>
                         </div>
                         <div class="worst-case-item">
-                            <i class="fas fa-percentage text-info"></i>
+                            <div class="worst-case-icon secondary">
+                                <i class="fas fa-percentage"></i>
+                            </div>
                             <div>
                                 <strong>費用成本</strong>
-                                <p>投資涉及管理費、手續費等成本，會影響實際報酬</p>
+                                <p>投資涉及申購手續費、管理費、保管費等成本，會影響實際報酬</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="disclosure-notice mt-3">
-                        <p>本系統提供的建議僅供參考，不構成投資建議或招攬。投資決策應基於您自身的財務狀況、風險承受能力及投資目標。過往績效不代表未來表現。</p>
+                    <!-- 合規提醒 -->
+                    <div class="compliance-notice">
+                        <h4><i class="fas fa-balance-scale"></i> 合規提醒</h4>
+                        <ul class="compliance-list">
+                            <li><i class="fas fa-check-circle text-success"></i> 所有建議均基於核准產品池，符合銀行內部規範</li>
+                            <li><i class="fas fa-check-circle text-success"></i> 系統已依據您的風險屬性進行適合度檢核</li>
+                            <li><i class="fas fa-check-circle text-success"></i> 投資建議可追溯至核准文件來源</li>
+                            <li><i class="fas fa-check-circle text-success"></i> 您可隨時要求轉介真人理財顧問諮詢</li>
+                        </ul>
                     </div>
 
-                    <div class="form-check mt-3">
-                        <input type="checkbox" class="form-check-input" id="riskAcknowledge">
-                        <label class="form-check-label" for="riskAcknowledge">
-                            <strong>我已閱讀並理解上述風險揭露內容</strong>
-                        </label>
+                    <!-- 免責聲明 -->
+                    <div class="disclosure-notice">
+                        <h4><i class="fas fa-file-contract"></i> 免責聲明</h4>
+                        <p>本系統提供的建議僅供參考，不構成投資建議或招攬。投資決策應基於您自身的財務狀況、風險承受能力及投資目標。如有疑慮，建議諮詢專業理財顧問。</p>
+                        <p class="text-muted" style="font-size: 0.8rem;">資料來源：核准產品池 2026Q1 / 內部投資研究報告</p>
+                    </div>
+
+                    <!-- 確認勾選 -->
+                    <div class="risk-acknowledge-section">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="riskAcknowledge">
+                            <label class="form-check-label" for="riskAcknowledge">
+                                <strong>✓ 我已閱讀並理解上述風險揭露內容，了解投資可能產生本金損失</strong>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeRiskModal()">稍後再看</button>
+            <div class="modal-footer risk-modal-footer">
+                <button class="btn btn-outline" onclick="requestHumanAdvisor()">
+                    <i class="fas fa-user-tie"></i>
+                    轉介真人顧問
+                </button>
+                <button class="btn btn-secondary" onclick="closeRiskModal()">
+                    <i class="fas fa-times"></i>
+                    稍後再看
+                </button>
                 <button class="btn btn-primary" id="riskConfirmBtn" disabled onclick="confirmRiskDisclosure()">
+                    <i class="fas fa-check"></i>
                     確認並繼續
                 </button>
             </div>
@@ -171,16 +237,73 @@
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Scripts -->
-    <script src="js/app.js"></script>
-    <script src="js/pages/home.js"></script>
-    <script src="js/pages/goals.js"></script>
-    <script src="js/pages/profile.js"></script>
-    <script src="js/pages/recommendation.js"></script>
-    <script src="js/pages/execution.js"></script>
-    <script src="js/pages/dashboard.js"></script>
-    <script src="js/pages/share.js"></script>
-    <script src="js/demo.js"></script>
+    <!-- Chatbot Button -->
+    <button class="chatbot-button" id="chatbotButton" onclick="toggleChatbot()" title="與小雲對話">
+        <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chatbot-avatar">
+        <span class="chatbot-badge">1</span>
+    </button>
+
+    <!-- Chatbot Window -->
+    <div class="chatbot-window" id="chatbotWindow">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chatbot-header-avatar">
+                <div>
+                    <h4>小雲 ☁️</h4>
+                    <span class="chatbot-status">
+                        <span class="status-dot"></span>
+                        智慧理財助手
+                    </span>
+                </div>
+            </div>
+            <div class="chatbot-header-actions">
+                <button class="chatbot-action-btn" onclick="clearChat()" title="清除對話">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button class="chatbot-action-btn" onclick="minimizeChatbot()" title="最小化">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="chatbot-messages" id="chatMessages">
+            <!-- Messages will be rendered here -->
+        </div>
+        
+        <div class="chatbot-quick-questions" id="quickQuestions">
+            <!-- Quick questions will be rendered here -->
+        </div>
+        
+        <div class="chatbot-input-area">
+            <input 
+                type="text" 
+                id="chatInput" 
+                class="chatbot-input" 
+                placeholder="請輸入您的問題，例如：我的資產、商品推薦..."
+                onkeypress="handleChatKeyPress(event)"
+            >
+            <button class="chatbot-send-btn" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        
+        <div class="chatbot-footer">
+            <span>💡 可查詢個人資產、持倉、商品資訊或理財問題</span>
+        </div>
+    </div>
+
+    <!-- Scripts with cache busting -->
+    <script src="js/app.js?v=20260131"></script>
+    <script src="js/pages/home.js?v=20260131"></script>
+    <script src="js/pages/goals.js?v=20260131"></script>
+    <script src="js/pages/profile.js?v=20260131"></script>
+    <script src="js/pages/recommendation.js?v=20260131"></script>
+    <script src="js/pages/execution.js?v=20260131"></script>
+    <script src="js/pages/dashboard.js?v=20260131"></script>
+    <script src="js/pages/share.js?v=20260131"></script>
+    <script src="js/data-service.js?v=20260131"></script>
+    <script src="js/chatbot.js?v=20260131"></script>
+    <script src="js/demo.js?v=20260131"></script>
     <script>
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
@@ -188,6 +311,7 @@
             // Show demo hint
             console.log('%c🎮 Fin_WMAI Prototype', 'font-size: 20px; font-weight: bold; color: #d4af37;');
             console.log('%c按 Ctrl + D 開啟 Demo 控制面板', 'font-size: 14px; color: #6c757d;');
+            console.log('%c💬 點擊右下角小雲圖示開啟 AI 對話', 'font-size: 14px; color: #3498db;');
         });
     </script>
 </body>

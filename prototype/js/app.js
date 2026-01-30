@@ -48,10 +48,79 @@ function logEvent(eventName, data = {}) {
 
 // ===== Initialization =====
 function initApp() {
-    // Simulate loading
-    setTimeout(() => {
-        hideLoading();
-        navigateTo('home');
+    // 設置影片播放結束事件
+    const introVideo = document.getElementById('introVideo');
+    let videoEnded = false;
+    let dataLoaded = false;
+    
+    // 當影片結束或 3 秒後（較晚者）才進入首頁
+    function checkAndProceed() {
+        if (videoEnded && dataLoaded) {
+            hideLoading();
+            navigateTo('home');
+        }
+    }
+    
+    if (introVideo) {
+        introVideo.addEventListener('ended', () => {
+            videoEnded = true;
+            checkAndProceed();
+        });
+        
+        // 如果影片無法播放（例如不支援），3秒後自動繼續
+        introVideo.addEventListener('error', () => {
+            console.warn('⚠️ 影片無法播放，使用備用方案');
+            videoEnded = true;
+            checkAndProceed();
+        });
+        
+        // 安全備用：如果影片超過 10 秒還沒結束，強制繼續
+        setTimeout(() => {
+            if (!videoEnded) {
+                videoEnded = true;
+                checkAndProceed();
+            }
+        }, 10000);
+    } else {
+        // 沒有影片元素時，直接標記為完成
+        videoEnded = true;
+    }
+    
+    // 載入資料
+    setTimeout(async () => {
+        // 等待 demoDataService 載入完成
+        if (typeof demoDataService !== 'undefined') {
+            try {
+                await demoDataService.loadData();
+                
+                // 用 demo 資料初始化 AppState
+                const customer = demoDataService.getCustomerById('cust_001');
+                if (customer) {
+                    AppState.user.name = customer.name;
+                    AppState.user.status = customer.tags[0] || '新手投資者';
+                }
+                
+                // 載入客戶的目標
+                const goals = demoDataService.getCustomerGoals('cust_001');
+                if (goals && goals.length > 0) {
+                    AppState.goals = goals;
+                    AppState.currentGoal = goals[0];
+                }
+                
+                // 載入客戶風險屬性
+                const riskProfile = customer?.tags?.find(t => t.includes('型'));
+                if (riskProfile) {
+                    AppState.user.riskGrade = riskProfile;
+                }
+                
+                console.log('✅ AppState 已與 DemoData 同步');
+            } catch (error) {
+                console.error('❌ 初始化資料失敗:', error);
+            }
+        }
+        
+        dataLoaded = true;
+        checkAndProceed();
     }, 1500);
     
     // Setup risk disclosure checkbox listener
@@ -175,6 +244,104 @@ function showRiskDisclosure(callback) {
     if (modal) {
         modal.classList.add('active');
         modal.dataset.callback = callback || '';
+        
+        // Reset checkbox and button state
+        const checkbox = document.getElementById('riskAcknowledge');
+        const confirmBtn = document.getElementById('riskConfirmBtn');
+        if (checkbox) checkbox.checked = false;
+        if (confirmBtn) confirmBtn.disabled = true;
+        
+        // Update customer risk profile display
+        updateRiskProfileDisplay();
+        
+        // Setup checkbox listener
+        setupRiskCheckboxListener();
+        
+        logEvent('risk_disclosure_viewed');
+    }
+}
+
+function updateRiskProfileDisplay() {
+    const profileBadge = document.getElementById('riskProfileBadge');
+    const profileDesc = document.getElementById('riskProfileDesc');
+    const maxEquity = document.getElementById('maxEquity');
+    const maxHighRisk = document.getElementById('maxHighRisk');
+    
+    // Get user's risk profile from AppState or DemoDataService
+    let riskGrade = AppState.user.riskGrade || '穩健型';
+    let riskData = null;
+    
+    // Try to get from DemoDataService if available
+    if (typeof demoDataService !== 'undefined' && demoDataService.loaded) {
+        const riskProfiles = demoDataService.getRiskProfiles();
+        riskData = riskProfiles.find(p => p.name === riskGrade);
+    }
+    
+    // Default risk data
+    if (!riskData) {
+        riskData = {
+            name: riskGrade,
+            description: getDefaultRiskDescription(riskGrade),
+            maxEquityAllocation: getDefaultMaxEquity(riskGrade),
+            maxHighRiskAllocation: getDefaultMaxHighRisk(riskGrade)
+        };
+    }
+    
+    // Update UI
+    if (profileBadge) {
+        const gradeSpan = profileBadge.querySelector('.risk-grade');
+        if (gradeSpan) gradeSpan.textContent = riskData.name;
+    }
+    
+    if (profileDesc) {
+        profileDesc.textContent = riskData.description;
+    }
+    
+    if (maxEquity) {
+        maxEquity.textContent = Math.round(riskData.maxEquityAllocation * 100) + '%';
+    }
+    
+    if (maxHighRisk) {
+        maxHighRisk.textContent = Math.round(riskData.maxHighRiskAllocation * 100) + '%';
+    }
+}
+
+function getDefaultRiskDescription(grade) {
+    const descriptions = {
+        '保守型': '追求資本保護，願意接受較低報酬以換取穩定性',
+        '穩健型': '願意承擔適度風險以追求較佳報酬，重視長期穩健成長',
+        '積極型': '願意承擔較高風險以追求較高報酬，有較長投資期限',
+        '激進型': '追求最大化報酬，能夠承受高度波動和潛在虧損'
+    };
+    return descriptions[grade] || descriptions['穩健型'];
+}
+
+function getDefaultMaxEquity(grade) {
+    const limits = { '保守型': 0.10, '穩健型': 0.50, '積極型': 0.75, '激進型': 1.0 };
+    return limits[grade] || 0.50;
+}
+
+function getDefaultMaxHighRisk(grade) {
+    const limits = { '保守型': 0, '穩健型': 0.20, '積極型': 0.40, '激進型': 0.60 };
+    return limits[grade] || 0.20;
+}
+
+function setupRiskCheckboxListener() {
+    const checkbox = document.getElementById('riskAcknowledge');
+    const confirmBtn = document.getElementById('riskConfirmBtn');
+    
+    if (checkbox && confirmBtn) {
+        // Remove existing listeners to avoid duplicates
+        const newCheckbox = checkbox.cloneNode(true);
+        checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+        
+        newCheckbox.addEventListener('change', (e) => {
+            confirmBtn.disabled = !e.target.checked;
+            if (e.target.checked) {
+                confirmBtn.classList.add('pulse-animation');
+                setTimeout(() => confirmBtn.classList.remove('pulse-animation'), 500);
+            }
+        });
     }
 }
 
@@ -182,12 +349,16 @@ function closeRiskModal() {
     const modal = document.getElementById('riskDisclosureModal');
     if (modal) {
         modal.classList.remove('active');
+        logEvent('risk_disclosure_closed');
     }
 }
 
 function confirmRiskDisclosure() {
     AppState.riskDisclosureAcknowledged = true;
-    logEvent('risk_disclosure_acknowledged');
+    logEvent('risk_disclosure_acknowledged', {
+        riskGrade: AppState.user.riskGrade || '穩健型',
+        timestamp: new Date().toISOString()
+    });
     closeRiskModal();
     
     // Execute callback if exists
@@ -197,6 +368,15 @@ function confirmRiskDisclosure() {
     }
     
     showToast('success', '已確認風險揭露', '您可以繼續查看投資建議');
+}
+
+function requestHumanAdvisor() {
+    logEvent('human_advisor_requested', {
+        from: 'risk_disclosure_modal',
+        riskGrade: AppState.user.riskGrade
+    });
+    closeRiskModal();
+    showToast('info', '已收到您的請求', '理財顧問將在 1 個工作天內與您聯繫');
 }
 
 // ===== Toast Notifications =====
@@ -374,17 +554,36 @@ const API = {
     async generateRecommendation() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         
+        // 嘗試從資料源取得建議配置
+        let allocation = [
+            { name: '全球股票型基金A', percent: 40, risk: 'high' },
+            { name: '新興市場債券基金B', percent: 25, risk: 'medium' },
+            { name: '投資級債券基金C', percent: 20, risk: 'low' },
+            { name: '貨幣市場基金D', percent: 15, risk: 'very-low' }
+        ];
+        
+        // 使用真實資料源的建議
+        if (typeof demoDataService !== 'undefined' && demoDataService.loaded) {
+            const recs = demoDataService.getCustomerRecommendations('cust_001');
+            if (recs && recs.length > 0) {
+                const latestRec = recs[0];
+                allocation = latestRec.allocation.map(a => ({
+                    name: a.productName,
+                    percent: a.percent,
+                    risk: a.percent > 30 ? 'high' : a.percent > 20 ? 'medium' : 'low'
+                }));
+            }
+        }
+        
+        const riskGrade = AppState.user.riskGrade || '穩健型';
+        const goalName = AppState.currentGoal?.typeName || '理財目標';
+        
         const recommendation = {
             id: 'rec_' + Date.now(),
-            allocation: [
-                { name: '全球股票型基金', percent: 40, risk: 'high' },
-                { name: '新興市場債券基金', percent: 25, risk: 'medium' },
-                { name: '投資級債券基金', percent: 20, risk: 'low' },
-                { name: '貨幣市場基金', percent: 15, risk: 'very-low' }
-            ],
-            rationale: '根據您的穩健型風險屬性和5年期的退休金目標，我們建議採用股債混合的配置策略。',
+            allocation: allocation,
+            rationale: `根據您的${riskGrade}風險屬性和「${goalName}」目標，我們建議採用股債混合的配置策略。這種配置方式就像一支平衡的籃球隊——既有進攻能力（股票），也有穩固的防守（債券），能在各種市場環境下保持競爭力。`,
             riskScenario: '在一般市場波動情況下，您的投資組合可能在短期內出現5-15%的價值變動。這就像搭乘長途飛機時遇到的氣流顛簸，雖然會有起伏，但只要保持航向，最終會安全抵達目的地。',
-            worstCase: '在極端市場情況下（如2008年金融海嘯），您的投資組合最大可能損失約25-30%。但歷史經驗顯示，採用定期定額策略的投資者，在市場回升後通常能獲得更好的長期報酬。',
+            worstCase: '在極端市場情況下（如2008年金融海嘯或2020年疫情初期），您的投資組合最大可能損失約25-30%。但歷史經驗顯示，採用定期定額策略的投資者，在市場回升後通常能獲得更好的長期報酬。',
             notes: [
                 '建議持有期間至少3-5年',
                 '每季度檢視一次配置比例',
@@ -490,10 +689,12 @@ window.toggleSidebar = toggleSidebar;
 window.showRiskDisclosure = showRiskDisclosure;
 window.closeRiskModal = closeRiskModal;
 window.confirmRiskDisclosure = confirmRiskDisclosure;
+window.requestHumanAdvisor = requestHumanAdvisor;
 window.showToast = showToast;
 window.formatCurrency = formatCurrency;
 window.formatNumber = formatNumber;
 window.formatDate = formatDate;
+window.calculateMonthsBetween = calculateMonthsBetween;
 window.renderSimpleChart = renderSimpleChart;
 window.renderDonutChart = renderDonutChart;
 window.initApp = initApp;

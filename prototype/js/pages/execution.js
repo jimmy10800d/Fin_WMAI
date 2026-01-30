@@ -110,6 +110,53 @@ function renderExecutionForm() {
             </div>
         </div>
 
+        <!-- Risk Disclosure Section -->
+        <div class="card mb-4 risk-disclosure-section">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    風險揭露確認
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="risk-disclosure-summary">
+                    <div class="risk-disclosure-icon">
+                        <img src="${IPIcons.notice}" alt="注意" style="width: 64px; height: 64px;">
+                    </div>
+                    <div class="risk-disclosure-info">
+                        <h5>投資前請詳閱風險揭露聲明</h5>
+                        <p class="text-muted mb-3">
+                            依據金融消費者保護法規定，在執行任何投資交易前，您必須完整閱讀並理解相關投資風險。
+                        </p>
+                        <div class="risk-highlights">
+                            <div class="risk-highlight-item">
+                                <i class="fas fa-chart-line text-warning"></i>
+                                <span>投資涉及風險，基金價值可能下跌</span>
+                            </div>
+                            <div class="risk-highlight-item">
+                                <i class="fas fa-history text-warning"></i>
+                                <span>過去績效不代表未來表現</span>
+                            </div>
+                            <div class="risk-highlight-item">
+                                <i class="fas fa-globe text-warning"></i>
+                                <span>匯率變動可能影響投資報酬</span>
+                            </div>
+                        </div>
+                        <div class="risk-disclosure-actions mt-3">
+                            <button class="btn btn-primary" onclick="showRiskDisclosureForExecution()">
+                                <i class="fas fa-file-alt"></i>
+                                查看完整風險揭露
+                            </button>
+                            <span class="risk-status" id="riskDisclosureStatus">
+                                <i class="fas fa-clock text-muted"></i>
+                                <span class="text-muted">尚未確認</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Pre-trade Check -->
         <div class="pretrade-check" id="pretradeCheck">
             <div class="pretrade-check-title">
@@ -473,6 +520,41 @@ function requestAdvisor() {
     showToast('info', '轉介申請已送出', '專業理專將於 1 個工作天內與您聯繫');
 }
 
+// Risk Disclosure for Execution Page
+function showRiskDisclosureForExecution() {
+    // Show the risk disclosure modal with a callback to update status
+    showRiskDisclosure('updateExecutionRiskStatus()');
+    logEvent('execution_risk_disclosure_viewed');
+}
+
+function updateExecutionRiskStatus() {
+    const statusEl = document.getElementById('riskDisclosureStatus');
+    if (statusEl) {
+        statusEl.innerHTML = `
+            <i class="fas fa-check-circle text-success"></i>
+            <span class="text-success">已確認風險揭露</span>
+        `;
+        statusEl.classList.add('confirmed');
+    }
+    
+    // Mark risk disclosure as completed in AppState
+    AppState.executionRiskConfirmed = true;
+    
+    // Enable the submit button if pre-trade check is also passed
+    checkSubmitButtonState();
+    
+    logEvent('execution_risk_disclosure_confirmed');
+}
+
+function checkSubmitButtonState() {
+    const submitBtn = document.getElementById('submitOrderBtn');
+    if (submitBtn && AppState.executionRiskConfirmed && AppState.pretradeCheckPassed) {
+        submitBtn.disabled = false;
+        submitBtn.classList.add('pulse-animation');
+        setTimeout(() => submitBtn.classList.remove('pulse-animation'), 1000);
+    }
+}
+
 // Helper functions
 function getAllocationColorExec(index) {
     const colors = ['#d4af37', '#3498db', '#27ae60', '#9b59b6', '#e74c3c'];
@@ -505,3 +587,5 @@ window.initExecutionPage = initExecutionPage;
 window.runPretradeCheck = runPretradeCheck;
 window.submitOrder = submitOrder;
 window.requestAdvisor = requestAdvisor;
+window.showRiskDisclosureForExecution = showRiskDisclosureForExecution;
+window.updateExecutionRiskStatus = updateExecutionRiskStatus;
