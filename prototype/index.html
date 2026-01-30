@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin_WMAI - 智慧投資理財規劃系統</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <img src="../IP_ICON/IP_THINKING.png" alt="載入中" class="loading-mascot">
+        <div class="spinner"></div>
+        <p>正在為您準備最佳體驗...</p>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="IP_ICON/IP_HELLO.png" alt="Fin_WMAI" class="sidebar-logo">
+                <div>
+                    <div class="sidebar-title">Fin_WMAI</div>
+                    <div class="sidebar-subtitle">智慧投資理財規劃</div>
+                </div>
+                <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="切換淺色模式">☀️</button>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-page="home" onclick="navigateTo('home')">
+                            <span class="nav-icon"><i class="fas fa-home"></i></span>
+                            <span>首頁</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="goals" onclick="navigateTo('goals')">
+                            <span class="nav-icon"><i class="fas fa-bullseye"></i></span>
+                            <span>目標設定</span>
+                            <span class="nav-badge">新</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="profile" onclick="navigateTo('profile')">
+                            <span class="nav-icon"><i class="fas fa-user-shield"></i></span>
+                            <span>風險評估</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="recommendation" onclick="navigateTo('recommendation')">
+                            <span class="nav-icon"><i class="fas fa-magic"></i></span>
+                            <span>AI 建議</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="execution" onclick="navigateTo('execution')">
+                            <span class="nav-icon"><i class="fas fa-bolt"></i></span>
+                            <span>交易執行</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="dashboard" onclick="navigateTo('dashboard')">
+                            <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                            <span>資產儀表板</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="share" onclick="navigateTo('share')">
+                            <span class="nav-icon"><i class="fas fa-share-alt"></i></span>
+                            <span>分享成就</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">官大大</div>
+                        <div class="user-status">新手投資者</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="mainContent">
+            <!-- Pages will be loaded here -->
+        </main>
+    </div>
+
+    <!-- Risk Disclosure Modal -->
+    <div class="modal-overlay" id="riskDisclosureModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    風險揭露聲明
+                </h3>
+            </div>
+            <div class="modal-body">
+                <div class="risk-disclosure-content">
+                    <div class="alert alert-warning">
+                        <span class="alert-icon"><i class="fas fa-exclamation-circle"></i></span>
+                        <div>
+                            <strong>投資警語</strong>
+                            <p class="mb-0">投資一定有風險，基金投資有賺有賠，申購前應詳閱公開說明書。</p>
+                        </div>
+                    </div>
+                    
+                    <h4 class="mt-3">最壞狀況說明</h4>
+                    <div class="worst-case-box">
+                        <div class="worst-case-item">
+                            <i class="fas fa-chart-line-down text-danger"></i>
+                            <div>
+                                <strong>市場下跌風險</strong>
+                                <p>投資組合可能因市場波動而出現 20-30% 的短期損失</p>
+                            </div>
+                        </div>
+                        <div class="worst-case-item">
+                            <i class="fas fa-clock text-warning"></i>
+                            <div>
+                                <strong>流動性風險</strong>
+                                <p>部分投資標的可能需要較長時間才能贖回</p>
+                            </div>
+                        </div>
+                        <div class="worst-case-item">
+                            <i class="fas fa-percentage text-info"></i>
+                            <div>
+                                <strong>費用成本</strong>
+                                <p>投資涉及管理費、手續費等成本，會影響實際報酬</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="disclosure-notice mt-3">
+                        <p>本系統提供的建議僅供參考，不構成投資建議或招攬。投資決策應基於您自身的財務狀況、風險承受能力及投資目標。過往績效不代表未來表現。</p>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <input type="checkbox" class="form-check-input" id="riskAcknowledge">
+                        <label class="form-check-label" for="riskAcknowledge">
+                            <strong>我已閱讀並理解上述風險揭露內容</strong>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRiskModal()">稍後再看</button>
+                <button class="btn btn-primary" id="riskConfirmBtn" disabled onclick="confirmRiskDisclosure()">
+                    確認並繼續
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/pages/home.js"></script>
+    <script src="js/pages/goals.js"></script>
+    <script src="js/pages/profile.js"></script>
+    <script src="js/pages/recommendation.js"></script>
+    <script src="js/pages/execution.js"></script>
+    <script src="js/pages/dashboard.js"></script>
+    <script src="js/pages/share.js"></script>
+    <script src="js/demo.js"></script>
+    <script>
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+            // Show demo hint
+            console.log('%c🎮 Fin_WMAI Prototype', 'font-size: 20px; font-weight: bold; color: #d4af37;');
+            console.log('%c按 Ctrl + D 開啟 Demo 控制面板', 'font-size: 14px; color: #6c757d;');
+        });
+    </script>
+</body>
+</html>
