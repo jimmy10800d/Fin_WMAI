@@ -83,14 +83,28 @@
             </nav>
 
             <div class="sidebar-footer">
-                <div class="user-profile">
+                <div class="user-profile" id="userProfile" onclick="showUserMenu()">
                     <div class="user-avatar">
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="user-info">
-                        <div class="user-name">官大大</div>
-                        <div class="user-status">新手投資者</div>
+                        <div class="user-name" id="displayUserName">訪客</div>
+                        <div class="user-status" id="displayUserLevel">尚未登入</div>
                     </div>
+                    <i class="fas fa-caret-up user-menu-arrow"></i>
+                </div>
+                <!-- 使用者選單 -->
+                <div class="user-menu" id="userMenu" style="display: none;">
+                    <a href="#" class="user-menu-item" onclick="navigateTo('profile')">
+                        <i class="fas fa-user-cog"></i> 個人設定
+                    </a>
+                    <a href="#" class="user-menu-item" onclick="showLoginInfo()">
+                        <i class="fas fa-info-circle"></i> 登入資訊
+                    </a>
+                    <div class="user-menu-divider"></div>
+                    <a href="#" class="user-menu-item logout" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i> 登出
+                    </a>
                 </div>
             </div>
         </aside>

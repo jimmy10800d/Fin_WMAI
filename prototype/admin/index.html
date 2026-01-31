@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin_WMAI 後台管理系統</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- 側邊欄 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">☁️</span>
+                    <span class="logo-text">Fin_WMAI</span>
+                </div>
+                <span class="version">v1.0</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主控台</div>
+                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">系統儀表板</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">知識管理</div>
+                    <a href="#knowledge" class="nav-item" data-page="knowledge">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">知識庫管理</span>
+                    </a>
+                    <a href="#faq" class="nav-item" data-page="faq">
+                        <span class="nav-icon">❓</span>
+                        <span class="nav-text">FAQ 管理</span>
+                    </a>
+                    <a href="#prompts" class="nav-item" data-page="prompts">
+                        <span class="nav-icon">💬</span>
+                        <span class="nav-text">提示詞管理</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">資料源管理</div>
+                    <a href="#datasource" class="nav-item" data-page="datasource">
+                        <span class="nav-icon">🔌</span>
+                        <span class="nav-text">資料源總覽</span>
+                    </a>
+                    <a href="#customers" class="nav-item" data-page="customers">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">客戶資料</span>
+                    </a>
+                    <a href="#accounts" class="nav-item" data-page="accounts">
+                        <span class="nav-icon">💳</span>
+                        <span class="nav-text">帳戶交易</span>
+                    </a>
+                    <a href="#products" class="nav-item" data-page="products">
+                        <span class="nav-icon">📦</span>
+                        <span class="nav-text">產品資料</span>
+                    </a>
+                    <a href="#plans" class="nav-item" data-page="plans">
+                        <span class="nav-icon">🎯</span>
+                        <span class="nav-text">投資計劃</span>
+                    </a>
+                    <a href="#market" class="nav-item" data-page="market">
+                        <span class="nav-icon">📈</span>
+                        <span class="nav-text">市場資訊</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">風控合規</div>
+                    <a href="#risk" class="nav-item" data-page="risk">
+                        <span class="nav-icon">⚠️</span>
+                        <span class="nav-text">風險監控</span>
+                    </a>
+                    <a href="#compliance" class="nav-item" data-page="compliance">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">合規審核</span>
+                    </a>
+                    <a href="#audit" class="nav-item" data-page="audit">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">稽核日誌</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">系統管理</div>
+                    <a href="#users" class="nav-item" data-page="users">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">使用者管理</span>
+                    </a>
+                    <a href="#roles" class="nav-item" data-page="roles">
+                        <span class="nav-icon">🔐</span>
+                        <span class="nav-text">角色權限</span>
+                    </a>
+                    <a href="#settings" class="nav-item" data-page="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">系統設定</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <span class="user-name">Admin</span>
+                        <span class="user-role">系統管理員</span>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    🚪 登出
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主要內容區 -->
+        <main class="main-content">
+            <!-- 頂部導航 -->
+            <header class="top-header">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <div class="breadcrumb" id="breadcrumb">
+                    <span>首頁</span> / <span>系統儀表板</span>
+                </div>
+                <div class="header-actions">
+                    <div class="notification-bell">
+                        <span class="bell-icon">🔔</span>
+                        <span class="notification-count">3</span>
+                    </div>
+                    <div class="current-time" id="currentTime"></div>
+                </div>
+            </header>
+
+            <!-- 頁面內容容器 -->
+            <div class="page-container" id="pageContainer">
+                <!-- 動態載入頁面內容 -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal 容器 -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" id="modalContent" onclick="event.stopPropagation()">
+            <!-- Modal 內容由 JS 動態填充 -->
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

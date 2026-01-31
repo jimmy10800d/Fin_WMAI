@@ -679,6 +679,99 @@ const API = {
     }
 };
 
+// ===== 登入狀態管理 =====
+function checkLoginStatus() {
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    const currentUser = sessionStorage.getItem('currentUser');
+    
+    if (isLoggedIn && currentUser) {
+        try {
+            const user = JSON.parse(currentUser);
+            // 更新顯示的使用者資訊
+            updateUserDisplay(user);
+            // 更新 AppState
+            AppState.user.name = user.name;
+            AppState.user.status = user.level;
+            return true;
+        } catch (e) {
+            console.error('解析使用者資料失敗:', e);
+        }
+    }
+    return false;
+}
+
+function updateUserDisplay(user) {
+    const nameEl = document.getElementById('displayUserName');
+    const levelEl = document.getElementById('displayUserLevel');
+    
+    if (nameEl) nameEl.textContent = user.name || '訪客';
+    if (levelEl) levelEl.textContent = user.level || '尚未登入';
+}
+
+function showUserMenu() {
+    const menu = document.getElementById('userMenu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function showLoginInfo() {
+    const currentUser = sessionStorage.getItem('currentUser');
+    if (currentUser) {
+        try {
+            const user = JSON.parse(currentUser);
+            const loginTime = new Date(user.loginTime).toLocaleString('zh-TW');
+            const method = user.loginMethod === 'qr-code' ? 'QR Code 掃描' : '密碼登入';
+            
+            alert(`登入資訊\n\n` +
+                  `使用者：${user.name}\n` +
+                  `等級：${user.level}\n` +
+                  `帳號：${user.id}\n` +
+                  `登入時間：${loginTime}\n` +
+                  `登入方式：${method}`);
+        } catch (e) {
+            console.error('顯示登入資訊失敗:', e);
+        }
+    }
+    // 關閉選單
+    document.getElementById('userMenu').style.display = 'none';
+}
+
+function handleLogout() {
+    if (confirm('確定要登出嗎？')) {
+        sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('currentUser');
+        
+        showToast('已成功登出', 'success');
+        
+        // 跳轉到登入頁
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1000);
+    }
+    // 關閉選單
+    document.getElementById('userMenu').style.display = 'none';
+}
+
+// 點擊其他地方關閉使用者選單
+document.addEventListener('click', (e) => {
+    const userProfile = document.getElementById('userProfile');
+    const userMenu = document.getElementById('userMenu');
+    
+    if (userProfile && userMenu && !userProfile.contains(e.target)) {
+        userMenu.style.display = 'none';
+    }
+});
+
+// 初始化時檢查登入狀態
+const originalInitApp = initApp;
+initApp = function() {
+    // 檢查登入狀態
+    checkLoginStatus();
+    // 呼叫原始初始化
+    originalInitApp();
+};
+
 // Export for global access
 window.AppState = AppState;
 window.IPIcons = IPIcons;
@@ -698,3 +791,8 @@ window.calculateMonthsBetween = calculateMonthsBetween;
 window.renderSimpleChart = renderSimpleChart;
 window.renderDonutChart = renderDonutChart;
 window.initApp = initApp;
+window.checkLoginStatus = checkLoginStatus;
+window.showUserMenu = showUserMenu;
+window.showLoginInfo = showLoginInfo;
+window.handleLogout = handleLogout;
+

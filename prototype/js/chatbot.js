@@ -4,11 +4,28 @@
  * 支援個人資產查詢與商品問答
  */
 
+// ===== Ollama API 設定 =====
+const OllamaConfig = {
+    baseUrl: 'http://localhost:11434',  // Ollama 本機服務地址
+    model: 'llama3.1:8b',                // 使用的模型名稱（可選：mistral-nemo:12b, gemma3:4b）
+    enabled: true,                       // 是否啟用 Ollama（關閉則使用本地知識庫）
+    timeout: 60000,                      // API 超時時間（毫秒）
+    systemPrompt: `你是「小雲」，一位親切、專業的智慧理財小助手。你的特點：
+- 使用繁體中文回答
+- 說話親切友善，適時使用表情符號
+- 專注於投資理財相關話題
+- 能幫助用戶了解資產狀況、投資商品和理財知識
+- 回答簡潔明瞭，使用列點和分段讓內容易讀
+- 對於超出理財範疇的問題，禮貌地引導回投資話題
+- 提醒用戶投資有風險，過去績效不代表未來表現`
+};
+
 // ===== 聊天機器人狀態 =====
 const ChatbotState = {
     isOpen: false,
     isTyping: false,
     messages: [],
+    conversationHistory: [],  // Ollama 對話歷史
     sessionId: 'chat_' + Date.now(),
     userName: '官大大',
     customerId: 'cust_001'  // 當前客戶 ID
@@ -529,7 +546,7 @@ function toggleChatbot() {
 /**
  * 發送用戶訊息
  */
-function sendMessage() {
+async function sendMessage() {
     const input = document.getElementById('chatInput');
     const message = input.value.trim();
     
@@ -542,12 +559,25 @@ function sendMessage() {
     // 顯示打字中狀態
     showTypingIndicator();
     
-    // 模擬 AI 思考時間後回應
-    setTimeout(() => {
+    try {
+        let response;
+        
+        if (OllamaConfig.enabled) {
+            // 使用 Ollama API
+            response = await generateOllamaResponse(message);
+        } else {
+            // 使用本地知識庫
+            await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1000));
+            response = generateResponse(message);
+        }
+        
         hideTypingIndicator();
-        const response = generateResponse(message);
         addBotMessage(response.text, response.icon);
-    }, 800 + Math.random() * 1000);
+    } catch (error) {
+        console.error('Chatbot error:', error);
+        hideTypingIndicator();
+        addBotMessage('抱歉，我遇到了一些技術問題 😅\n請稍後再試，或者點擊「轉介真人顧問」獲得協助！', 'notice');
+    }
     
     logEvent('chatbot_message_sent', { message: message.substring(0, 50) });
 }
@@ -564,7 +594,230 @@ function askQuickQuestion(question) {
 }
 
 /**
- * 生成 AI 回應
+ * 呼叫 Ollama API 生成回應
+ */
+async function generateOllamaResponse(userMessage) {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // ===== 先檢查是否為個人資料查詢（這些需要本地資料） =====
+    const localResponse = checkLocalDataQuery(lowerMessage);
+    if (localResponse) {
+        // 將本地資料加入對話歷史
+        ChatbotState.conversationHistory.push(
+            { role: 'user', content: userMessage },
+            { role: 'assistant', content: localResponse.text }
+        );
+        return localResponse;
+    }
+    
+    // ===== 準備上下文資訊 =====
+    let contextInfo = '';
+    
+    // 嘗試獲取用戶資產摘要作為上下文
+    const assetData = PersonalDataQueries.getAssetSummary();
+    if (assetData && assetData.summary) {
+        contextInfo = `\n\n【用戶資料參考】
+用戶姓名：${assetData.customer.name}
+總資產：NT$ ${formatMoney(assetData.summary.totalAssets)}
+淨資產：NT$ ${formatMoney(assetData.summary.netWorth)}
+風險屬性：${assetData.customer.riskProfile?.riskLevel || '穩健型'}`;
+    }
+    
+    // ===== 建立對話歷史 =====
+    ChatbotState.conversationHistory.push({
+        role: 'user',
+        content: userMessage
+    });
+    
+    // 限制對話歷史長度（保留最近 10 輪對話）
+    if (ChatbotState.conversationHistory.length > 20) {
+        ChatbotState.conversationHistory = ChatbotState.conversationHistory.slice(-20);
+    }
+    
+    try {
+        const response = await fetch(`${OllamaConfig.baseUrl}/api/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: OllamaConfig.model,
+                messages: [
+                    {
+                        role: 'system',
+                        content: OllamaConfig.systemPrompt + contextInfo
+                    },
+                    ...ChatbotState.conversationHistory
+                ],
+                stream: false,
+                options: {
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    num_predict: 500
+                }
+            }),
+            signal: AbortSignal.timeout(OllamaConfig.timeout)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Ollama API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const assistantMessage = data.message?.content || '抱歉，我無法生成回應。';
+        
+        // 加入對話歷史
+        ChatbotState.conversationHistory.push({
+            role: 'assistant',
+            content: assistantMessage
+        });
+        
+        return {
+            text: assistantMessage,
+            icon: determineIcon(assistantMessage)
+        };
+        
+    } catch (error) {
+        console.error('Ollama API error:', error);
+        
+        // 如果 Ollama 不可用，降級使用本地知識庫
+        console.log('Falling back to local knowledge base...');
+        const fallbackResponse = generateResponse(userMessage);
+        
+        ChatbotState.conversationHistory.push({
+            role: 'assistant',
+            content: fallbackResponse.text
+        });
+        
+        return fallbackResponse;
+    }
+}
+
+/**
+ * 檢查是否為需要本地資料的查詢
+ */
+function checkLocalDataQuery(lowerMessage) {
+    // 資產總覽查詢
+    if (matchKeywords(lowerMessage, ['資產', '總資產', '我有多少', '身家', '淨值'])) {
+        return PersonalResponses.assetSummary();
+    }
+    
+    // 持倉明細查詢
+    if (matchKeywords(lowerMessage, ['持倉', '持股', '投資組合', '買了什麼', '持有', '投資明細'])) {
+        return PersonalResponses.holdingsDetail();
+    }
+    
+    // 帳戶查詢
+    if (matchKeywords(lowerMessage, ['帳戶', '戶頭', '銀行', '存款', '餘額'])) {
+        return PersonalResponses.accountsInfo();
+    }
+    
+    // 交易記錄查詢
+    if (matchKeywords(lowerMessage, ['交易', '紀錄', '買賣', '歷史'])) {
+        return PersonalResponses.transactionsInfo();
+    }
+    
+    // 目標進度查詢
+    if (matchKeywords(lowerMessage, ['目標', '進度', '達成', '計畫', '規劃'])) {
+        return PersonalResponses.goalsProgress();
+    }
+    
+    // 收支查詢
+    if (matchKeywords(lowerMessage, ['收入', '支出', '收支', '薪水', '花費', '儲蓄'])) {
+        return PersonalResponses.incomeExpenseInfo();
+    }
+    
+    // 所有商品列表
+    if (matchKeywords(lowerMessage, ['有哪些商品', '商品列表', '可以投資', '有什麼基金', '推薦商品'])) {
+        return ProductResponses.allProducts();
+    }
+    
+    // 市場資訊
+    if (matchKeywords(lowerMessage, ['市場', '行情', '股市', '指數', '大盤'])) {
+        return MarketResponses.marketOverview();
+    }
+    
+    // 特定商品查詢
+    const productNames = ['全球股票', '新興市場', '穩健債券', '貨幣市場', '科技創新', '平衡型', 'ETF'];
+    for (const productName of productNames) {
+        if (lowerMessage.includes(productName.toLowerCase()) || lowerMessage.includes(productName)) {
+            return ProductResponses.productDetail(productName);
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * 根據回應內容決定顯示的圖示
+ */
+function determineIcon(text) {
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.includes('警告') || lowerText.includes('注意') || lowerText.includes('風險')) {
+        return 'notice';
+    }
+    if (lowerText.includes('恭喜') || lowerText.includes('很棒') || lowerText.includes('成功')) {
+        return 'keepEarn';
+    }
+    if (lowerText.includes('建議') || lowerText.includes('考慮')) {
+        return 'thinking';
+    }
+    if (lowerText.includes('你好') || lowerText.includes('嗨') || lowerText.includes('歡迎')) {
+        return 'hello';
+    }
+    
+    return 'keepCare';
+}
+
+/**
+ * 檢查 Ollama 服務狀態
+ */
+async function checkOllamaStatus() {
+    try {
+        const response = await fetch(`${OllamaConfig.baseUrl}/api/tags`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Ollama 服務正常，可用模型:', data.models?.map(m => m.name).join(', '));
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.warn('Ollama 服務不可用:', error.message);
+        return false;
+    }
+}
+
+/**
+ * 切換 Ollama 模式
+ */
+function toggleOllamaMode(enabled) {
+    OllamaConfig.enabled = enabled;
+    console.log(`Ollama 模式: ${enabled ? '啟用' : '停用'}`);
+}
+
+/**
+ * 設定 Ollama 模型
+ */
+function setOllamaModel(modelName) {
+    OllamaConfig.model = modelName;
+    console.log(`Ollama 模型設定為: ${modelName}`);
+}
+
+/**
+ * 清除對話歷史
+ */
+function clearConversationHistory() {
+    ChatbotState.conversationHistory = [];
+    console.log('對話歷史已清除');
+}
+
+/**
+ * 生成 AI 回應（本地知識庫版本，作為備援）
  * 優先處理個人資料查詢，再處理知識庫匹配
  */
 function generateResponse(userMessage) {
@@ -881,14 +1134,29 @@ function minimizeChatbot() {
 
 // ===== 全域匯出 =====
 window.ChatbotState = ChatbotState;
+window.OllamaConfig = OllamaConfig;
 window.toggleChatbot = toggleChatbot;
 window.sendMessage = sendMessage;
 window.askQuickQuestion = askQuickQuestion;
 window.clearChat = clearChat;
 window.handleChatKeyPress = handleChatKeyPress;
 window.minimizeChatbot = minimizeChatbot;
+window.checkOllamaStatus = checkOllamaStatus;
+window.toggleOllamaMode = toggleOllamaMode;
+window.setOllamaModel = setOllamaModel;
+window.clearConversationHistory = clearConversationHistory;
 
-// 頁面載入時渲染快速問題
+// 頁面載入時渲染快速問題並檢查 Ollama 狀態
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(renderQuickQuestions, 500);
+    
+    // 檢查 Ollama 服務狀態
+    checkOllamaStatus().then(isAvailable => {
+        if (isAvailable) {
+            console.log('✅ Ollama 服務已連接，使用 AI 對話模式');
+        } else {
+            console.log('⚠️ Ollama 服務不可用，使用本地知識庫模式');
+            OllamaConfig.enabled = false;
+        }
+    });
 });

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin_WMAI - 登入</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body class="login-body">
+    <!-- 背景動畫 -->
+    <div class="login-bg-animation">
+        <div class="bg-circle circle-1"></div>
+        <div class="bg-circle circle-2"></div>
+        <div class="bg-circle circle-3"></div>
+    </div>
+
+    <div class="login-wrapper">
+        <!-- Logo 與標題 -->
+        <div class="login-brand">
+            <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="login-mascot">
+            <h1 class="login-title">Fin_WMAI</h1>
+            <p class="login-subtitle">智慧投資理財規劃系統</p>
+        </div>
+
+        <!-- 登入卡片 -->
+        <div class="login-card">
+            <!-- 步驟一：輸入使用者 ID -->
+            <div class="login-step" id="stepUserId">
+                <h2 class="step-title">歡迎回來！</h2>
+                <p class="step-desc">請輸入您的使用者帳號開始登入</p>
+
+                <div class="login-error" id="loginError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="errorMessage"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="userId">
+                        <i class="fas fa-user"></i> 使用者帳號
+                    </label>
+                    <input type="text" id="userId" placeholder="請輸入帳號" autocomplete="username">
+                </div>
+
+                <button class="btn-primary" onclick="proceedToQRAuth()">
+                    下一步 <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <div class="demo-hint">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Demo 帳號：<code>user001</code>、<code>user002</code>、<code>vip001</code></span>
+                </div>
+            </div>
+
+            <!-- 步驟二：QR Code 認證 -->
+            <div class="login-step" id="stepQRAuth" style="display: none;">
+                <div class="auth-user-badge" id="authUserBadge">
+                    <div class="user-avatar-small">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="user-display-name" id="userDisplayName">使用者名稱</span>
+                    <button class="change-user-btn" onclick="changeUser()">
+                        <i class="fas fa-exchange-alt"></i> 更換
+                    </button>
+                </div>
+
+                <h2 class="step-title">掃描 QR Code</h2>
+                <p class="step-desc">請使用行動裝置掃描以下 QR Code 完成身份驗證</p>
+
+                <div class="qr-container">
+                    <div class="qr-frame">
+                        <canvas id="qrCanvas" width="180" height="180"></canvas>
+                        <div class="qr-scan-line" id="qrScanLine"></div>
+                    </div>
+                    <div class="qr-timer">
+                        <i class="fas fa-clock"></i>
+                        <span>有效時間：</span>
+                        <span id="qrTimer" class="timer-value">02:00</span>
+                    </div>
+                    <button class="btn-outline" onclick="refreshQRCode()">
+                        <i class="fas fa-sync-alt"></i> 重新產生
+                    </button>
+                </div>
+
+                <div class="login-divider">
+                    <span>或使用密碼登入</span>
+                </div>
+
+                <button class="btn-secondary" onclick="showPasswordLogin()">
+                    <i class="fas fa-key"></i> 使用密碼登入
+                </button>
+            </div>
+
+            <!-- 步驟三：密碼登入（備用） -->
+            <div class="login-step" id="stepPassword" style="display: none;">
+                <button class="back-btn" onclick="backToQRAuth()">
+                    <i class="fas fa-arrow-left"></i> 返回 QR Code 登入
+                </button>
+
+                <h2 class="step-title">密碼登入</h2>
+
+                <form id="passwordForm" onsubmit="handlePasswordLogin(event)">
+                    <div class="form-group">
+                        <label for="loginPassword">
+                            <i class="fas fa-lock"></i> 密碼
+                        </label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="loginPassword" placeholder="請輸入密碼">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rememberMe">
+                            <span>記住我</span>
+                        </label>
+                        <a href="#" class="forgot-link">忘記密碼？</a>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> 登入
+                    </button>
+                </form>
+            </div>
+
+            <!-- 驗證成功動畫 -->
+            <div class="login-step" id="stepSuccess" style="display: none;">
+                <div class="success-animation">
+                    <div class="success-circle">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+                <h2 class="step-title success-title">登入成功！</h2>
+                <p class="step-desc" id="welcomeMessage">歡迎回來，正在載入您的資料...</p>
+                <div class="loading-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo 控制面板 -->
+        <div class="demo-panel" id="demoPanel" style="display: none;">
+            <p><i class="fas fa-gamepad"></i> Demo 模式</p>
+            <div class="demo-buttons">
+                <button class="demo-btn success" onclick="simulateScanSuccess()">
+                    <i class="fas fa-check-circle"></i> 模擬掃描成功
+                </button>
+                <button class="demo-btn danger" onclick="simulateScanFailed()">
+                    <i class="fas fa-times-circle"></i> 模擬掃描失敗
+                </button>
+            </div>
+        </div>
+
+        <!-- 頁尾 -->
+        <div class="login-footer">
+            <p>© 2026 Fin_WMAI. All rights reserved.</p>
+            <p><i class="fas fa-shield-alt"></i> 採用銀行級加密保護您的資料安全</p>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin_WMAI 後台管理系統 - 登入</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo 區域 -->
+            <div class="login-header">
+                <div class="logo">
+                    <span class="logo-icon">☁️</span>
+                    <span class="logo-text">Fin_WMAI</span>
+                </div>
+                <h1>後台管理系統</h1>
+                <p class="subtitle">智慧理財 AI 管理平台</p>
+            </div>
+
+            <!-- QR Code 登入區域 -->
+            <div class="qr-login-section" id="qrLoginSection">
+                <h2>使用者身份驗證</h2>
+                
+                <!-- 使用者 ID 輸入 -->
+                <div class="user-id-section" id="userIdSection">
+                    <div class="form-group">
+                        <label for="loginUserId">使用者 ID</label>
+                        <input type="text" id="loginUserId" name="loginUserId" placeholder="請輸入使用者 ID" class="user-id-input">
+                        <div class="user-id-hint">
+                            <small>💡 Demo 可用 ID: admin, operator01, compliance01</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="proceedToQRAuth()" style="width: 100%; margin-top: 10px;">
+                        下一步：QR Code 認證 →
+                    </button>
+                </div>
+
+                <!-- QR Code 認證區域（第二步） -->
+                <div class="qr-auth-section" id="qrAuthSection" style="display: none;">
+                    <div class="auth-user-info" id="authUserInfo">
+                        <span class="auth-user-icon">👤</span>
+                        <span class="auth-user-name" id="authUserName">使用者名稱</span>
+                        <button class="change-user-btn" onclick="changeUser()">更換</button>
+                    </div>
+                    
+                    <p class="qr-instruction">請使用行動裝置掃描 QR Code 完成身份驗證</p>
+                    
+                    <div class="qr-code-container">
+                        <div class="qr-code" id="qrCode">
+                            <canvas id="qrCanvas"></canvas>
+                        </div>
+                        <div class="qr-overlay" id="qrOverlay">
+                            <div class="scan-line"></div>
+                        </div>
+                        <div class="qr-status" id="qrStatus">
+                            <span class="status-icon">📱</span>
+                            <span class="status-text">等待掃描認證...</span>
+                        </div>
+                    </div>
+                    <div class="qr-timer">
+                        <span>QR Code 有效時間：</span>
+                        <span id="qrTimer">02:00</span>
+                    </div>
+                    <button class="refresh-qr-btn" onclick="refreshQRCode()">
+                        🔄 重新產生 QR Code
+                    </button>
+                </div>
+
+                <div class="login-divider">
+                    <span>或</span>
+                </div>
+
+                <button class="alt-login-btn" onclick="showPasswordLogin()">
+                    使用帳號密碼登入
+                </button>
+            </div>
+
+            <!-- 帳號密碼登入區域（備用） -->
+            <div class="password-login-section" id="passwordLoginSection" style="display: none;">
+                <h2>帳號密碼登入</h2>
+                <form id="loginForm" onsubmit="handlePasswordLogin(event)">
+                    <div class="form-group">
+                        <label for="username">帳號</label>
+                        <input type="text" id="username" name="username" placeholder="請輸入帳號" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">密碼</label>
+                        <input type="password" id="password" name="password" placeholder="請輸入密碼" required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="rememberMe"> 記住我
+                        </label>
+                    </div>
+                    <button type="submit" class="login-btn">登入</button>
+                </form>
+
+                <div class="login-divider">
+                    <span>或</span>
+                </div>
+
+                <button class="alt-login-btn" onclick="showQRLogin()">
+                    使用 QR Code 登入
+                </button>
+            </div>
+
+            <!-- 模擬掃描成功 -->
+            <div class="scan-success-section" id="scanSuccessSection" style="display: none;">
+                <div class="success-animation">
+                    <div class="success-icon">✓</div>
+                </div>
+                <h2>掃描成功！</h2>
+                <p>正在驗證身份...</p>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+            </div>
+
+            <!-- 頁尾 -->
+            <div class="login-footer">
+                <p>© 2026 Fin_WMAI. All rights reserved.</p>
+                <p class="security-note">🔒 使用 TLS 1.3 加密連線</p>
+            </div>
+        </div>
+
+        <!-- 模擬掃描按鈕（僅供 Demo） -->
+        <div class="demo-controls" id="demoControls" style="display: none;">
+            <p>🎮 Demo 模式</p>
+            <button class="demo-btn" onclick="simulateScan()">✅ 模擬掃描成功</button>
+            <button class="demo-btn" onclick="simulateScanFailed()" style="background: #ef4444;">❌ 模擬掃描失敗</button>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>
