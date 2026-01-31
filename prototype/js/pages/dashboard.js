@@ -423,10 +423,9 @@ function renderAssetChart() {
     const data = dashboardData.assetHistory;
     const maxValue = Math.max(...data.map(d => d.value));
     const minValue = Math.min(...data.map(d => d.value));
-    const padding = (maxValue - minValue) * 0.1; // 上下留白 10%
-    const adjustedMax = maxValue + padding;
-    const adjustedMin = minValue - padding;
-    const range = adjustedMax - adjustedMin;
+    // 讓最小值從 0 或接近最小值開始，讓差異更明顯
+    const adjustedMin = Math.max(0, minValue * 0.9);
+    const range = maxValue - adjustedMin;
     
     // 格式化大數字為萬為單位
     const formatChartValue = (value) => {
@@ -436,90 +435,120 @@ function renderAssetChart() {
         return value.toLocaleString();
     };
     
-    // SVG 折線圖設定
-    const svgWidth = 100; // 使用百分比寬度
-    const svgHeight = 250;
-    const chartPadding = { top: 30, right: 20, bottom: 40, left: 20 };
-    const chartWidth = data.length > 1 ? (svgWidth - chartPadding.left - chartPadding.right) : svgWidth;
-    const chartHeight = svgHeight - chartPadding.top - chartPadding.bottom;
-    
-    // 計算各點座標
-    const points = data.map((item, index) => {
-        const x = chartPadding.left + (index / (data.length - 1)) * chartWidth;
-        const y = chartPadding.top + chartHeight - ((item.value - adjustedMin) / range) * chartHeight;
-        return { x, y, value: item.value, month: item.month };
+    // 計算每個柱子的高度百分比
+    const bars = data.map((item, index) => {
+        const heightPercent = ((item.value - adjustedMin) / range) * 100;
+        const isLast = index === data.length - 1;
+        return { ...item, heightPercent, isLast, index };
     });
     
-    // 建立折線路徑
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x}% ${p.y}`).join(' ');
-    
-    // 建立漸層填充區域路徑
-    const areaPath = `${linePath} L ${points[points.length - 1].x}% ${chartPadding.top + chartHeight} L ${points[0].x}% ${chartPadding.top + chartHeight} Z`;
-    
     let chartHTML = `
-        <div class="line-chart-container" style="position: relative; width: 100%; height: ${svgHeight}px;">
-            <svg width="100%" height="${svgHeight}" style="overflow: visible;">
-                <!-- 漸層定義 -->
-                <defs>
-                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" style="stop-color: var(--secondary); stop-opacity: 1" />
-                        <stop offset="100%" style="stop-color: var(--accent); stop-opacity: 1" />
-                    </linearGradient>
-                    <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color: var(--secondary); stop-opacity: 0.3" />
-                        <stop offset="100%" style="stop-color: var(--secondary); stop-opacity: 0.05" />
-                    </linearGradient>
-                </defs>
-                
-                <!-- 水平網格線 -->
-                ${[0, 0.25, 0.5, 0.75, 1].map(ratio => {
-                    const y = chartPadding.top + chartHeight * (1 - ratio);
-                    return `<line x1="${chartPadding.left}%" y1="${y}" x2="${100 - chartPadding.right}%" y2="${y}" 
-                            stroke="rgba(255,255,255,0.1)" stroke-dasharray="4,4" />`;
-                }).join('')}
-                
-                <!-- 填充區域 -->
-                <path d="${areaPath}" fill="url(#areaGradient)" />
-                
-                <!-- 折線 -->
-                <path d="${linePath}" fill="none" stroke="url(#lineGradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                
-                <!-- 資料點 -->
-                ${points.map((p, i) => {
-                    const isLast = i === points.length - 1;
-                    return `
-                        <circle cx="${p.x}%" cy="${p.y}" r="${isLast ? 8 : 5}" 
-                                fill="${isLast ? 'var(--accent)' : 'var(--secondary)'}" 
-                                stroke="var(--bg-primary)" stroke-width="2"
-                                style="filter: ${isLast ? 'drop-shadow(0 0 8px rgba(212, 175, 55, 0.5))' : 'none'};" />
-                    `;
-                }).join('')}
-                
-                <!-- 數值標籤 -->
-                ${points.map((p, i) => {
-                    const isLast = i === points.length - 1;
-                    return `
-                        <text x="${p.x}%" y="${p.y - 12}" 
-                              text-anchor="middle" 
-                              fill="${isLast ? 'var(--accent)' : 'var(--gray-400)'}" 
-                              font-size="12" 
-                              font-weight="${isLast ? '600' : '500'}">
-                            ${formatChartValue(p.value)}
-                        </text>
-                    `;
-                }).join('')}
-                
-                <!-- 月份標籤 -->
-                ${points.map((p, i) => `
-                    <text x="${p.x}%" y="${svgHeight - 10}" 
-                          text-anchor="middle" 
-                          fill="var(--gray-500)" 
-                          font-size="12" 
-                          font-weight="500">
-                        ${p.month.split('-')[1]}月
-                    </text>
-                `).join('')}
-            </svg>
+        <style>
+            .asset-bar-chart {
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-around;
+                height: 250px;
+                padding: 30px 10px 50px 10px;
+                gap: 8px;
+                position: relative;
+            }
+            .asset-bar-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 1;
+                max-width: 100px;
+                height: 100%;
+                position: relative;
+            }
+            .asset-bar-wrapper {
+                flex: 1;
+                width: 100%;
+                display: flex;
+                align-items: flex-end;
+                justify-content: center;
+                position: relative;
+            }
+            .asset-bar {
+                width: 100%;
+                max-width: 60px;
+                background: linear-gradient(180deg, var(--secondary) 0%, #5A7A66 100%);
+                border-radius: 8px 8px 2px 2px;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                position: relative;
+            }
+            .asset-bar.highlight {
+                background: linear-gradient(180deg, var(--accent) 0%, #A67C52 100%);
+                box-shadow: 0 0 20px rgba(197, 155, 133, 0.5);
+            }
+            .asset-bar:hover {
+                opacity: 0.9;
+                transform: scaleY(1.03);
+                transform-origin: bottom;
+            }
+            .asset-bar-dot {
+                position: absolute;
+                top: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 14px;
+                height: 14px;
+                background: var(--secondary);
+                border-radius: 50%;
+                border: 3px solid var(--bg-card);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                z-index: 10;
+            }
+            .asset-bar.highlight .asset-bar-dot {
+                width: 18px;
+                height: 18px;
+                background: var(--accent);
+                box-shadow: 0 0 12px rgba(197, 155, 133, 0.8);
+            }
+            .asset-bar-value {
+                position: absolute;
+                top: -38px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 11px;
+                font-weight: 600;
+                color: var(--text-primary);
+                white-space: nowrap;
+                z-index: 11;
+            }
+            .asset-bar.highlight .asset-bar-value {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--accent);
+            }
+            .asset-bar-label {
+                font-size: 13px;
+                color: var(--text-secondary);
+                margin-top: 12px;
+                font-weight: 500;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }
+            .asset-bar-label.highlight {
+                color: var(--accent);
+                font-weight: 700;
+                background: rgba(197, 155, 133, 0.15);
+            }
+        </style>
+        <div class="asset-bar-chart">
+            ${bars.map(bar => `
+                <div class="asset-bar-item">
+                    <div class="asset-bar-wrapper">
+                        <div class="asset-bar ${bar.isLast ? 'highlight' : ''}" style="height: ${Math.max(bar.heightPercent, 8)}%;">
+                            <div class="asset-bar-dot"></div>
+                            <div class="asset-bar-value">${formatChartValue(bar.value)}</div>
+                        </div>
+                    </div>
+                    <div class="asset-bar-label ${bar.isLast ? 'highlight' : ''}">${bar.month.split('-')[1]}月</div>
+                </div>
+            `).join('')}
         </div>
     `;
     

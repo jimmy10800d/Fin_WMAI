@@ -7,7 +7,7 @@
 // ===== Ollama API 設定 =====
 const OllamaConfig = {
     baseUrl: 'http://localhost:11434',  // Ollama 本機服務地址
-    model: 'llama3.1:8b',                // 使用的模型名稱（可選：mistral-nemo:12b, gemma3:4b）
+    model: 'llama3.1:8b',                // 使用的模型名稱（若本機未安裝，會自動切換為第一個可用模型）
     enabled: true,                       // 是否啟用 Ollama（關閉則使用本地知識庫）
     timeout: 60000,                      // API 超時時間（毫秒）
     systemPrompt: `你是「小雲」，一位親切、專業的智慧理財小助手。你的特點：
@@ -571,6 +571,11 @@ async function sendMessage() {
             response = generateResponse(message);
         }
         
+        if (!response || !response.text) {
+            console.warn('Chatbot response invalid, using local fallback.');
+            response = generateResponse(message);
+        }
+
         hideTypingIndicator();
         addBotMessage(response.text, response.icon);
     } catch (error) {
@@ -782,7 +787,14 @@ async function checkOllamaStatus() {
         
         if (response.ok) {
             const data = await response.json();
-            console.log('Ollama 服務正常，可用模型:', data.models?.map(m => m.name).join(', '));
+            const modelNames = data.models?.map(m => m.name).filter(Boolean) || [];
+            console.log('Ollama 服務正常，可用模型:', modelNames.join(', '));
+
+            if (modelNames.length > 0 && !modelNames.includes(OllamaConfig.model)) {
+                const fallbackModel = modelNames[0];
+                console.warn(`Ollama 模型 ${OllamaConfig.model} 未安裝，改用 ${fallbackModel}`);
+                OllamaConfig.model = fallbackModel;
+            }
             return true;
         }
         return false;
@@ -966,10 +978,14 @@ function addUserMessage(text) {
  * 添加機器人訊息到聊天視窗
  */
 function addBotMessage(text, icon = 'hello') {
+    const safeText = typeof text === 'string' && text.trim()
+        ? text
+        : '抱歉，我目前無法回答這個問題。請稍後再試或改問別的理財問題。';
+
     const message = {
         id: 'msg_' + Date.now(),
         type: 'bot',
-        text: text,
+        text: safeText,
         icon: icon,
         timestamp: new Date()
     };
@@ -1017,6 +1033,7 @@ function renderMessage(message) {
  * 格式化訊息文字（支援 Markdown 風格）
  */
 function formatMessageText(text) {
+    if (typeof text !== 'string') return '';
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>')

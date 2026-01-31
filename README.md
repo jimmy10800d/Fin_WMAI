@@ -29,7 +29,7 @@
 | 📊 **風險評估** | KYC 問卷與 Gap Analysis 差距分析 |
 | 🤖 **AI 建議** | GenAI 白話化投資建議與情境說明 |
 | ⚡ **交易執行** | 一鍵下單與 Pre-trade 風控檢核 |
-| 📈 **資產監控** | 即時儀表板與里程碑追蹤系統 |
+| 📈 **資產監控** | 即時儀表板、資產變化直方圖與里程碑追蹤系統 |
 | 🎉 **社交分享** | 隱私保護的成就分享功能 |
 
 ---
@@ -89,8 +89,11 @@ python -m http.server 8000
 ### 啟動 AI 功能（可選）
 
 ```bash
-# 安裝並啟動 Ollama
+# 安裝並啟動 Ollama（系統會自動偵測可用模型）
 ollama run llama3.1:8b
+
+# 或使用其他已安裝的模型，系統會自動切換
+ollama list  # 查看可用模型
 ```
 
 ---
@@ -154,7 +157,7 @@ ollama run llama3.1:8b
 ## 🛠️ 技術棧
 
 - **前端**：HTML5、CSS3、Vanilla JavaScript
-- **AI 服務**：Ollama（llama3.1:8b）
+- **AI 服務**：Ollama（自動偵測可用模型）
 - **設計系統**：自定義莫蘭迪色系 CSS 變數
 - **伺服器**：Python HTTP Server
 

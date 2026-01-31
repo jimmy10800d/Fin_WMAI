@@ -155,6 +155,11 @@ function setTheme(theme) {
         toggleBtn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
         toggleBtn.title = theme === 'dark' ? '切換淺色模式' : '切換深色模式';
     }
+    
+    // Re-render chart if on dashboard page to update theme colors
+    if (AppState.currentPage === 'dashboard' && typeof renderAssetChart === 'function') {
+        renderAssetChart();
+    }
 }
 
 function hideLoading() {
