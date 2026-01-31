@@ -766,7 +766,14 @@ document.addEventListener('click', (e) => {
 // 初始化時檢查登入狀態
 const originalInitApp = initApp;
 initApp = function() {
-    // 檢查登入狀態
+    // 檢查登入狀態，如果未登入則導向登入頁面
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+    if (!isLoggedIn) {
+        // 未登入，導向登入頁面
+        window.location.href = 'login.html';
+        return;
+    }
+    // 已登入，更新使用者顯示
     checkLoginStatus();
     // 呼叫原始初始化
     originalInitApp();

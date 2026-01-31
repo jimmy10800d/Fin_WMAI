@@ -82,7 +82,7 @@ cd Fin_WMAI/prototype
 python -m http.server 8000
 
 # 3. 開啟瀏覽器
-# 前台：http://localhost:8000/login.html
+# 前台：http://localhost:8000（自動導向登入頁）
 # 後台：http://localhost:8000/admin/login.html
 ```
 
