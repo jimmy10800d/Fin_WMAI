@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin_WMAI 入口導覽</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: "Noto Sans TC", sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+        .portal {
+            width: 100%;
+            max-width: 880px;
+        }
+        .portal-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .portal-title {
+            font-size: 32px;
+            margin: 0 0 8px;
+            font-weight: 700;
+        }
+        .portal-subtitle {
+            margin: 0;
+            font-size: 16px;
+            color: #cbd5f5;
+        }
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .portal-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+        }
+        .portal-card h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .portal-card p {
+            margin: 0;
+            color: #cbd5f5;
+            line-height: 1.6;
+        }
+        .portal-actions {
+            margin-top: auto;
+        }
+        .portal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            background: #fbbf24;
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .portal-btn.secondary {
+            background: #38bdf8;
+        }
+        .portal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.25);
+        }
+        .portal-footer {
+            text-align: center;
+            margin-top: 28px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="portal">
+        <header class="portal-header">
+            <h1 class="portal-title">Fin_WMAI 入口導覽</h1>
+            <p class="portal-subtitle">請選擇要進入的系統頁面</p>
+        </header>
+
+        <div class="portal-grid">
+            <section class="portal-card">
+                <h2>前台使用者入口</h2>
+                <p>適合客戶使用的投資理財流程，包括目標設定、風險評估、AI 建議與資產儀表板。</p>
+                <div class="portal-actions">
+                    <a class="portal-btn" href="login.html">進入前台登入</a>
+                </div>
+            </section>
+
+            <section class="portal-card">
+                <h2>後台管理入口</h2>
+                <p>供內部人員管理知識庫、資料源與合規審核，支援儀表板與權限控管流程。</p>
+                <div class="portal-actions">
+                    <a class="portal-btn secondary" href="admin/login.html">進入後台登入</a>
+                </div>
+            </section>
+        </div>
+
+        <div class="portal-footer">© 2026 Fin_WMAI - 智慧投資理財規劃系統</div>
+    </div>
+</body>
+</html>

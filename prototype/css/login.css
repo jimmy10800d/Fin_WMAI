@@ -683,6 +683,32 @@
     background: #A66B6B;
 }
 
+/* 入口導覽連結 */
+.page-links {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(229, 234, 235, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0 2px;
+}
+
+.page-links a {
+    color: #F2F5F5;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.page-links a:hover {
+    text-decoration: underline;
+}
+
+.page-links .divider {
+    opacity: 0.6;
+}
+
 /* 頁尾 */
 .login-footer {
     text-align: center;
