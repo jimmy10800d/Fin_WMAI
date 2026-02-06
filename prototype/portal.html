@@ -1,130 +1,178 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fin_WMAI 入口導覽</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            color-scheme: light;
-        }
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            margin: 0;
-            font-family: "Noto Sans TC", sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #e2e8f0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 16px;
-        }
-        .portal {
-            width: 100%;
-            max-width: 880px;
-        }
-        .portal-header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .portal-title {
-            font-size: 32px;
-            margin: 0 0 8px;
-            font-weight: 700;
-        }
-        .portal-subtitle {
-            margin: 0;
-            font-size: 16px;
-            color: #cbd5f5;
-        }
-        .portal-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 20px;
-        }
-        .portal-card {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
-        }
-        .portal-card h2 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 600;
-        }
-        .portal-card p {
-            margin: 0;
-            color: #cbd5f5;
-            line-height: 1.6;
-        }
-        .portal-actions {
-            margin-top: auto;
-        }
-        .portal-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 18px;
-            border-radius: 999px;
-            background: #fbbf24;
-            color: #0f172a;
-            text-decoration: none;
-            font-weight: 600;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .portal-btn.secondary {
-            background: #38bdf8;
-        }
-        .portal-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.25);
-        }
-        .portal-footer {
-            text-align: center;
-            margin-top: 28px;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>薪守村 — 選擇入口</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #1a2332;
+      --card-bg: #263545;
+      --border: #3a4a5a;
+      --gold: #d4a843;
+      --gold-light: #f0d68a;
+      --green: #4a7c59;
+      --text: #e8dcc8;
+      --text-muted: #8a9eae;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .portal-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .portal-header img {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 20px rgba(212,168,67,0.4);
+      margin-bottom: 12px;
+    }
+    .portal-header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 6px;
+    }
+    .portal-header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .portal-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: var(--text);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .portal-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--green), var(--gold));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .portal-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 16px rgba(212,168,67,0.2);
+    }
+
+    .portal-card:hover::before {
+      opacity: 1;
+    }
+
+    .portal-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .portal-card.adventurer .portal-icon {
+      background: linear-gradient(135deg, var(--green), #2d5a3d);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(74,124,89,0.3);
+    }
+
+    .portal-card.guild .portal-icon {
+      background: linear-gradient(135deg, var(--gold), #b8912e);
+      color: #3a2718;
+      box-shadow: 0 4px 12px rgba(212,168,67,0.3);
+    }
+
+    .portal-card h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .portal-card p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .portal-footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    @media (max-width: 480px) {
+      .portal-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-    <div class="portal">
-        <header class="portal-header">
-            <h1 class="portal-title">Fin_WMAI 入口導覽</h1>
-            <p class="portal-subtitle">請選擇要進入的系統頁面</p>
-        </header>
+  <div class="portal-header">
+    <img src="IP_ICON/IP_HELLO.png" alt="薪守村">
+    <h1>薪 守 村</h1>
+    <p>選擇你的入口</p>
+  </div>
 
-        <div class="portal-grid">
-            <section class="portal-card">
-                <h2>前台使用者入口</h2>
-                <p>適合客戶使用的投資理財流程，包括目標設定、風險評估、AI 建議與資產儀表板。</p>
-                <div class="portal-actions">
-                    <a class="portal-btn" href="login.html">進入前台登入</a>
-                </div>
-            </section>
+  <div class="portal-grid">
+    <a href="login.html" class="portal-card adventurer">
+      <div class="portal-icon">
+        <i class="fas fa-hat-wizard"></i>
+      </div>
+      <h2>冒險者入口</h2>
+      <p>進入薪守村展開你的理財冒險旅程</p>
+    </a>
+    <a href="admin/login.html" class="portal-card guild">
+      <div class="portal-icon">
+        <i class="fas fa-scroll"></i>
+      </div>
+      <h2>公會管理所</h2>
+      <p>管理員後台 — 知識庫、合規與資料管理</p>
+    </a>
+  </div>
 
-            <section class="portal-card">
-                <h2>後台管理入口</h2>
-                <p>供內部人員管理知識庫、資料源與合規審核，支援儀表板與權限控管流程。</p>
-                <div class="portal-actions">
-                    <a class="portal-btn secondary" href="admin/login.html">進入後台登入</a>
-                </div>
-            </section>
-        </div>
-
-        <div class="portal-footer">© 2026 Fin_WMAI - 智慧投資理財規劃系統</div>
-    </div>
+  <div class="portal-footer">
+    <p>薪守村 Fin_WMAI © 2026 第二組 元神啟動</p>
+  </div>
 </body>
 </html>

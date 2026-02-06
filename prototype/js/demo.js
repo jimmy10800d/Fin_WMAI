@@ -1,226 +1,155 @@
-/**
- * Fin_WMAI - Demo Data Loader
- * 載入預設示範資料，方便快速展示完整流程
- */
+/* ================================================
+   Demo Helper — 快速演示 / 自動流程
+   ================================================ */
 
-const DemoData = {
-    // 預設目標
-    goal: {
-        id: 'goal_demo_001',
-        type: 'retirement',
-        typeName: '退休金',
-        icon: '🏖️',
-        targetAmount: 5000000,
-        targetDate: '2031-01-30',
-        initialAmount: 50000,
-        monthlyAmount: 5000,
-        createdAt: '2025-07-15T10:30:00Z'
-    },
-    
-    // 預設風險評估結果
-    profile: {
-        answers: { 1: 2, 2: 3, 3: 3, 4: 3, 5: 3 },
-        riskScore: 55,
-        riskGrade: '穩健型'
-    },
-    
-    // 預設推薦方案
-    recommendation: {
-        id: 'rec_demo_001',
-        allocation: [
-            { name: '全球股票型基金', percent: 40, risk: 'high' },
-            { name: '新興市場債券基金', percent: 25, risk: 'medium' },
-            { name: '投資級債券基金', percent: 20, risk: 'low' },
-            { name: '貨幣市場基金', percent: 15, risk: 'very-low' }
-        ],
-        rationale: '根據您的穩健型風險屬性和5年期的退休金目標，我們建議採用股債混合的配置策略。這種配置方式就像一支平衡的籃球隊——既有進攻能力（股票），也有穩固的防守（債券），能在各種市場環境下保持競爭力。',
-        riskScenario: '在一般市場波動情況下，您的投資組合可能在短期內出現5-15%的價值變動。這就像搭乘長途飛機時遇到的氣流顛簸，雖然會有起伏，但只要保持航向，最終會安全抵達目的地。歷史數據顯示，類似配置在過去10年的年化報酬率約為6-8%。',
-        worstCase: '在極端市場情況下（如2008年金融海嘯或2020年疫情初期），您的投資組合最大可能損失約25-30%。但歷史經驗顯示，採用定期定額策略的投資者，在市場回升後通常能獲得更好的長期報酬。以2020年為例，市場在3月大跌後，到年底已完全恢復並創新高。',
-        notes: [
-            '建議持有期間至少3-5年，讓投資組合有足夠時間度過市場週期',
-            '每季度檢視一次配置比例，確保維持在目標範圍內',
-            '可設定±5%的再平衡觸發點，系統會自動提醒',
-            '定期定額能有效降低進場時機的風險',
-            '若有重大生活變化，建議重新評估風險屬性'
-        ],
-        sourceRef: 'DOC-2026-001-v2.3 / 核准產品池 2026Q1',
-        generatedAt: new Date().toISOString()
-    },
-    
-    // 預設行動清單
-    actionList: [
-        { type: 'initial', name: '首次投入', amount: 50000, frequency: 'once' },
-        { type: 'regular', name: '定期定額', amount: 5000, frequency: 'monthly' },
-        { type: 'rebalance', name: '再平衡檢視', amount: null, frequency: 'quarterly' }
-    ],
-    
-    // 儀表板數據
-    dashboard: {
-        totalAssets: 156800,
-        totalReturn: 12.5,
-        goalProgress: 32,
-        monthlyInvestment: 5000,
-        consecutiveDays: 180,
-        assetHistory: [
-            { month: '2025-07', value: 50000 },
-            { month: '2025-08', value: 55200 },
-            { month: '2025-09', value: 58900 },
-            { month: '2025-10', value: 62300 },
-            { month: '2025-11', value: 71500 },
-            { month: '2025-12', value: 85200 },
-            { month: '2026-01', value: 156800 }
-        ],
-        milestones: [
-            { id: 1, title: '開始投資之旅', icon: '🚀', achieved: true },
-            { id: 2, title: '連續投入30天', icon: '🔥', achieved: true },
-            { id: 3, title: '資產突破10萬', icon: '💰', achieved: true },
-            { id: 4, title: '連續投入180天', icon: '⭐', achieved: true, isNew: true },
-            { id: 5, title: '資產突破50萬', icon: '🏆', achieved: false, progress: 31 }
-        ]
-    }
-};
+const Demo = {
+  /** 快速填入完整 demo 狀態 */
+  quickSetup() {
+    // 模擬已完成前三階段
+    AppState.user = { id: 'demo', name: '旅行者', level: 3, riskGrade: 'C3' };
+    AppState.level = 3;
+    AppState.xp = 420;
 
-/**
- * 載入完整 Demo 資料（模擬已完成所有步驟的用戶）
- */
-function loadFullDemo() {
-    AppState.currentGoal = DemoData.goal;
-    AppState.goals = [DemoData.goal];
-    AppState.profile = DemoData.profile;
-    AppState.user.riskScore = DemoData.profile.riskScore;
-    AppState.user.riskGrade = DemoData.profile.riskGrade;
-    AppState.recommendation = DemoData.recommendation;
-    AppState.actionList = DemoData.actionList;
-    AppState.riskDisclosureAcknowledged = true;
-    
-    console.log('✅ Demo 資料已載入');
-    showToast('success', 'Demo 模式', '已載入完整示範資料');
-    
-    // 重新渲染當前頁面
-    navigateTo(AppState.currentPage);
-}
+    AppState.currentGoal = {
+      type: 'retirement',
+      name: '退休規劃',
+      amount: 5000000,
+      years: 25,
+      monthly: 15000,
+      description: '希望 60 歲退休後每月有 3 萬元生活費'
+    };
 
-/**
- * 載入部分 Demo 資料（模擬剛完成目標設定的用戶）
- */
-function loadPartialDemo() {
-    AppState.currentGoal = DemoData.goal;
-    AppState.goals = [DemoData.goal];
-    
-    console.log('✅ 部分 Demo 資料已載入（僅目標）');
-    showToast('info', 'Demo 模式', '已載入目標設定，請繼續完成評估');
-    
+    AppState.profile = {
+      riskGrade: 'C3',
+      riskLabel: '平衡型戰士',
+      scores: [2, 2, 2, 2, 3],
+      totalScore: 11
+    };
+
+    AppState.recommendation = {
+      allocation: DataService.getAllocationTemplates().C3,
+      rationale: '根據您的平衡型風險屬性與 25 年退休目標，建議以全球股票為核心，搭配高股息和債券進行分散配置。',
+      trustLevel: 4
+    };
+
+    AppState.questStatus = {
+      home: 'completed',
+      goals: 'completed',
+      profile: 'completed',
+      recommendation: 'completed',
+      execution: 'available',
+      dashboard: 'locked',
+      share: 'locked'
+    };
+
+    updateQuestNav();
+    updatePlayerCard();
+    showToast('🎮 Demo 模式已啟動 — 已跳到「攻克據點」階段', 'info', 3000);
+    navigateTo('execution');
+  },
+
+  /** 完整流程自動播放 */
+  async autoPlay() {
+    showToast('🎬 自動演示開始...', 'info');
+    await this.delay(1000);
+
+    // Step 1: 目標設定
+    navigateTo('goals');
+    await this.delay(2000);
+
+    // Step 2: 風險評估
     navigateTo('profile');
-}
+    await this.delay(2000);
 
-/**
- * 重置所有資料
- */
-function resetDemo() {
+    // Step 3: 方案推薦
+    navigateTo('recommendation');
+    await this.delay(2000);
+
+    // Step 4: 一鍵下單
+    navigateTo('execution');
+    await this.delay(2000);
+
+    // Step 5: 戰績回顧
+    navigateTo('dashboard');
+    showToast('🎬 自動演示結束', 'success');
+  },
+
+  /** 重置所有狀態 */
+  reset() {
+    sessionStorage.clear();
+    AppState.level = 1;
+    AppState.xp = 0;
     AppState.currentGoal = null;
-    AppState.goals = [];
     AppState.profile = null;
-    AppState.user.riskScore = null;
-    AppState.user.riskGrade = null;
     AppState.recommendation = null;
     AppState.actionList = [];
-    AppState.riskDisclosureAcknowledged = false;
     AppState.events = [];
-    
-    console.log('🔄 Demo 資料已重置');
-    showToast('info', '已重置', '所有資料已清除');
-    
+    AppState.questStatus = {
+      home: 'completed',
+      goals: 'available',
+      profile: 'locked',
+      recommendation: 'locked',
+      execution: 'locked',
+      dashboard: 'locked',
+      share: 'locked'
+    };
+    updateQuestNav();
+    updatePlayerCard();
     navigateTo('home');
-}
+    showToast('🔄 已重置為初始狀態', 'info');
+  },
 
-/**
- * 顯示 Demo 控制面板
- */
-function showDemoPanel() {
-    const existingPanel = document.getElementById('demoPanel');
-    if (existingPanel) {
-        existingPanel.remove();
-        return;
+  /** 冒煙測試：依序檢查所有頁面關鍵元素是否存在 */
+  async runSmokeTest() {
+    const results = [];
+    const checks = [
+      { page: 'home', selector: '.quest-overview,.home-hero', label: '村莊廣場' },
+      { page: 'goals', selector: '.goal-types-grid,.goal-form', label: '目標設定' },
+      { page: 'profile', selector: '.kyc-question,.risk-meter', label: 'KYC 評估' },
+      { page: 'recommendation', selector: '.allocation-chart,.trust-section', label: '方案推薦' },
+      { page: 'execution', selector: '.action-list,.pretrade-check', label: '一鍵下單' },
+      { page: 'dashboard', selector: '#dashboardContent,.holdings-table', label: '戰績回顧' },
+      { page: 'share', selector: '.share-card-preview,.share-buttons', label: '冒險日誌' }
+    ];
+
+    // 確保必要資料與任務解鎖
+    this.quickSetup();
+    AppState.questStatus = {
+      home: 'completed',
+      goals: 'completed',
+      profile: 'completed',
+      recommendation: 'completed',
+      execution: 'completed',
+      dashboard: 'available',
+      share: 'available'
+    };
+    updateQuestNav();
+
+    showToast('🧪 冒煙測試開始...', 'info');
+
+    for (const c of checks) {
+      navigateTo(c.page);
+      await this.delay(600);
+      const ok = !!document.querySelector(c.selector);
+      results.push({ page: c.page, ok, label: c.label, selector: c.selector });
+      console.log(`[SmokeTest] ${c.label} (${c.page})`, ok ? 'OK' : 'FAIL', c.selector);
     }
-    
-    const panel = document.createElement('div');
-    panel.id = 'demoPanel';
-    panel.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: rgba(26, 35, 50, 0.95);
-        border: 1px solid var(--accent);
-        border-radius: 12px;
-        padding: 16px;
-        z-index: 9999;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        min-width: 200px;
-    `;
-    
-    panel.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <strong style="color: var(--accent);">🎮 Demo 控制</strong>
-            <button onclick="this.parentElement.parentElement.remove()" 
-                    style="background: none; border: none; color: var(--gray-500); cursor: pointer; font-size: 1.2rem;">
-                ×
-            </button>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button onclick="loadFullDemo()" class="btn btn-primary btn-sm">
-                <i class="fas fa-play"></i> 載入完整 Demo
-            </button>
-            <button onclick="loadPartialDemo()" class="btn btn-secondary btn-sm">
-                <i class="fas fa-forward"></i> 載入部分 Demo
-            </button>
-            <button onclick="resetDemo()" class="btn btn-outline btn-sm">
-                <i class="fas fa-redo"></i> 重置所有資料
-            </button>
-            <button onclick="showEventLog()" class="btn btn-secondary btn-sm">
-                <i class="fas fa-list"></i> 查看事件記錄
-            </button>
-        </div>
-        <div style="margin-top: 12px; font-size: 0.75rem; color: var(--gray-600);">
-            快捷鍵：Ctrl + D 開關面板
-        </div>
-    `;
-    
-    document.body.appendChild(panel);
-}
 
-/**
- * 顯示事件記錄
- */
-function showEventLog() {
-    console.log('📊 事件記錄：', AppState.events);
-    
-    const events = AppState.events.slice(-10);
-    const message = events.length > 0 
-        ? events.map(e => `• ${e.event}`).join('\n')
-        : '尚無事件記錄';
-    
-    alert(`最近事件記錄（${events.length}/${AppState.events.length}）：\n\n${message}`);
-}
-
-// 快捷鍵支援
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'd') {
-        e.preventDefault();
-        showDemoPanel();
+    const failed = results.filter(r => !r.ok);
+    if (failed.length === 0) {
+      showToast('✅ 冒煙測試完成：全部頁面正常', 'success', 3000);
+    } else {
+      showToast(`⚠️ 冒煙測試發現 ${failed.length} 個問題，請看 Console`, 'warning', 4000);
+      console.table(failed);
     }
-});
 
-// 頁面載入完成後顯示提示
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        console.log('💡 提示：按 Ctrl + D 開啟 Demo 控制面板');
-    }, 2000);
-});
+    return results;
+  },
 
-// Export
-window.DemoData = DemoData;
-window.loadFullDemo = loadFullDemo;
-window.loadPartialDemo = loadPartialDemo;
-window.resetDemo = resetDemo;
-window.showDemoPanel = showDemoPanel;
-window.showEventLog = showEventLog;
+  delay(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+};
+
+// Expose to console for demo use
+window.Demo = Demo;

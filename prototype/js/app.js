@@ -1,810 +1,479 @@
-/**
- * Fin_WMAI Prototype - Main Application Script
- * 智慧投資理財規劃系統
- */
+/* ================================================
+   薪守村 — 核心遊戲引擎 (app.js)
+   Features: 狀態管理、SPA 路由、遊戲機制、API 模擬
+   ================================================ */
 
-// ===== Global State =====
+/* --- Global State --- */
 const AppState = {
-    currentPage: 'home',
-    user: {
-        name: '官大大',
-        status: '新手投資者',
-        riskScore: null,
-        riskGrade: null
-    },
-    theme: 'dark', // 'dark' or 'light'
-    goals: [],
-    currentGoal: null,
-    profile: null,
-    recommendation: null,
-    actionList: [],
-    riskDisclosureAcknowledged: false,
-    events: []
+  currentPage: 'home',
+  user: null,
+  theme: localStorage.getItem('theme') || 'light',
+  // Game progression
+  xp: 0,
+  level: 1,
+  questStatus: {
+    home: 'completed',
+    goals: 'available',
+    profile: 'locked',
+    recommendation: 'locked',
+    execution: 'locked',
+    dashboard: 'locked',
+    share: 'locked'
+  },
+  // Feature data
+  goals: null,
+  currentGoal: null,
+  profile: { answers: [], riskScore: 0, riskGrade: '' },
+  recommendation: null,
+  actionList: null,
+  riskDisclosureAcknowledged: false,
+  trustScore: null,
+  // Events log
+  events: []
 };
 
-// ===== IP Icon Paths =====
-const IPIcons = {
-    hello: 'IP_ICON/IP_HELLO.png',
-    thinking: 'IP_ICON/IP_THINKING.png',
-    notice: 'IP_ICON/IP_NOTICE.png',
-    keepCare: 'IP_ICON/IP_KEEPCARE.png',
-    keepEarn: 'IP_ICON/IP_KEEPEARN.png',
-    assetUp: 'IP_ICON/IP_ASSET_UP.png',
-    goodnight: 'IP_ICON/IP_GOODNIGHT.png',
-    newChange: 'IP_ICON/IP_NEW_CHANGE.png'
+/* --- XP & Level System --- */
+const XP_TABLE = {
+  goal_captured: 50,
+  semantic_transformed: 30,
+  kyc_completed: 80,
+  compliance_reviewed: 20,
+  strategy_matched: 40,
+  risk_disclosure_acknowledged: 60,
+  plain_language_explained: 20,
+  personalized_plan_generated: 80,
+  order_pretrade_checked_passed: 50,
+  order_submitted: 100,
+  milestone_achieved: 120,
+  share_card_generated: 40,
+  trust_thermometer_submitted: 30
 };
 
-// ===== Event Logging =====
+function getXPForLevel(level) {
+  return level * 100 + (level - 1) * 50;
+}
+
+function addXP(amount, reason) {
+  AppState.xp += amount;
+  const needed = getXPForLevel(AppState.level);
+  if (AppState.xp >= needed) {
+    AppState.xp -= needed;
+    AppState.level++;
+    showToast(`升級！你現在是 Lv.${AppState.level}`, 'achievement');
+  }
+  updatePlayerCard();
+  showToast(`+${amount} XP — ${reason}`, 'info');
+}
+
 function logEvent(eventName, data = {}) {
-    const event = {
-        event: eventName,
-        timestamp: new Date().toISOString(),
-        userId: 'user_demo_001',
-        ...data
-    };
-    AppState.events.push(event);
-    console.log('📊 Event:', event);
+  const event = { event: eventName, timestamp: new Date().toISOString(), ...data };
+  AppState.events.push(event);
+  console.log('[Event]', eventName, data);
+  if (XP_TABLE[eventName]) {
+    addXP(XP_TABLE[eventName], eventName.replace(/_/g, ' '));
+  }
 }
 
-// ===== Initialization =====
-function initApp() {
-    // 設置影片播放結束事件
-    const introVideo = document.getElementById('introVideo');
-    let videoEnded = false;
-    let dataLoaded = false;
-    
-    // 當影片結束或 3 秒後（較晚者）才進入首頁
-    function checkAndProceed() {
-        if (videoEnded && dataLoaded) {
-            hideLoading();
-            navigateTo('home');
-        }
+/* --- Quest Progression --- */
+function unlockQuest(page) {
+  if (AppState.questStatus[page] === 'locked') {
+    AppState.questStatus[page] = 'available';
+    updateQuestNav();
+    showToast(`新任務解鎖！`, 'success');
+  }
+}
+
+function completeQuest(page) {
+  AppState.questStatus[page] = 'completed';
+  updateQuestNav();
+}
+
+function updateQuestNav() {
+  document.querySelectorAll('.quest-nav .nav-item').forEach(item => {
+    const page = item.dataset.page;
+    const status = AppState.questStatus[page];
+    const dot = item.querySelector('.quest-status');
+    if (dot) {
+      dot.className = 'quest-status ' + status;
     }
-    
-    if (introVideo) {
-        introVideo.addEventListener('ended', () => {
-            videoEnded = true;
-            checkAndProceed();
-        });
-        
-        // 如果影片無法播放（例如不支援），3秒後自動繼續
-        introVideo.addEventListener('error', () => {
-            console.warn('⚠️ 影片無法播放，使用備用方案');
-            videoEnded = true;
-            checkAndProceed();
-        });
-        
-        // 安全備用：如果影片超過 10 秒還沒結束，強制繼續
-        setTimeout(() => {
-            if (!videoEnded) {
-                videoEnded = true;
-                checkAndProceed();
-            }
-        }, 10000);
+    if (status === 'locked') {
+      item.style.opacity = '0.4';
+      item.style.pointerEvents = 'none';
     } else {
-        // 沒有影片元素時，直接標記為完成
-        videoEnded = true;
+      item.style.opacity = '1';
+      item.style.pointerEvents = 'auto';
     }
-    
-    // 載入資料
-    setTimeout(async () => {
-        // 等待 demoDataService 載入完成
-        if (typeof demoDataService !== 'undefined') {
-            try {
-                await demoDataService.loadData();
-                
-                // 用 demo 資料初始化 AppState
-                const customer = demoDataService.getCustomerById('cust_001');
-                if (customer) {
-                    AppState.user.name = customer.name;
-                    AppState.user.status = customer.tags[0] || '新手投資者';
-                }
-                
-                // 載入客戶的目標
-                const goals = demoDataService.getCustomerGoals('cust_001');
-                if (goals && goals.length > 0) {
-                    AppState.goals = goals;
-                    AppState.currentGoal = goals[0];
-                }
-                
-                // 載入客戶風險屬性
-                const riskProfile = customer?.tags?.find(t => t.includes('型'));
-                if (riskProfile) {
-                    AppState.user.riskGrade = riskProfile;
-                }
-                
-                console.log('✅ AppState 已與 DemoData 同步');
-            } catch (error) {
-                console.error('❌ 初始化資料失敗:', error);
-            }
-        }
-        
-        dataLoaded = true;
-        checkAndProceed();
-    }, 1500);
-    
-    // Setup risk disclosure checkbox listener
-    const riskCheckbox = document.getElementById('riskAcknowledge');
-    const confirmBtn = document.getElementById('riskConfirmBtn');
-    if (riskCheckbox && confirmBtn) {
-        riskCheckbox.addEventListener('change', (e) => {
-            confirmBtn.disabled = !e.target.checked;
-        });
-    }
-    
-    // Initialize theme from localStorage or default
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
+  });
 }
 
-// ===== Theme Toggle =====
-function toggleTheme() {
-    const newTheme = AppState.theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    logEvent('theme_changed', { theme: newTheme });
-}
-
-function setTheme(theme) {
-    AppState.theme = theme;
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    
-    // Update toggle button icon
-    const toggleBtn = document.getElementById('themeToggle');
-    if (toggleBtn) {
-        toggleBtn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
-        toggleBtn.title = theme === 'dark' ? '切換淺色模式' : '切換深色模式';
-    }
-    
-    // Re-render chart if on dashboard page to update theme colors
-    if (AppState.currentPage === 'dashboard' && typeof renderAssetChart === 'function') {
-        renderAssetChart();
-    }
-}
-
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 300);
-    }
-}
-
-function showLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-        overlay.style.opacity = '1';
-    }
-}
-
-// ===== Navigation =====
+/* --- SPA Navigation --- */
 function navigateTo(page) {
-    AppState.currentPage = page;
-    
-    // Update nav links
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.dataset.page === page) {
-            link.classList.add('active');
-        }
-    });
-    
-    // Close mobile sidebar
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.remove('open');
-    }
-    
-    // Render page content
-    const mainContent = document.getElementById('mainContent');
-    if (mainContent) {
-        mainContent.innerHTML = getPageContent(page);
-        mainContent.scrollTop = 0;
-        
-        // Initialize page-specific scripts
-        initPageScripts(page);
-    }
-    
-    logEvent('page_viewed', { page });
-}
-
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('open');
-    }
+  if (AppState.questStatus[page] === 'locked') {
+    showToast('此任務尚未解鎖，請先完成前置任務', 'warning');
+    return;
+  }
+  AppState.currentPage = page;
+  // Update nav active state
+  document.querySelectorAll('.quest-nav .nav-item').forEach(i => {
+    i.classList.toggle('active', i.dataset.page === page);
+  });
+  // Update header
+  const titles = {
+    home: '村莊廣場',
+    goals: '【初心者】目標設定',
+    profile: '【職業說明NPC】KYC 評估',
+    recommendation: '【專屬特殊技能】客製化方案',
+    execution: '【攻克據點】一鍵下單',
+    dashboard: '【戰績回顧】里程碑與理財調整',
+    share: '冒險日誌分享'
+  };
+  const breadcrumbs = {
+    home: '薪守村 / 村莊廣場',
+    goals: '薪守村 / 主線任務 / 初心者',
+    profile: '薪守村 / 主線任務 / 職業說明NPC',
+    recommendation: '薪守村 / 主線任務 / 專屬特殊技能',
+    execution: '薪守村 / 主線任務 / 攻克據點',
+    dashboard: '薪守村 / 主線任務 / 戰績回顧',
+    share: '薪守村 / 支線任務 / 冒險日誌'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  document.getElementById('breadcrumb').textContent = breadcrumbs[page] || '';
+  // Render page
+  const content = document.getElementById('mainContent');
+  content.innerHTML = getPageContent(page);
+  content.scrollTop = 0;
+  window.scrollTo(0, 0);
+  // Init page-specific scripts
+  setTimeout(() => initPageScripts(page), 50);
 }
 
 function getPageContent(page) {
-    switch(page) {
-        case 'home': return renderHomePage();
-        case 'goals': return renderGoalsPage();
-        case 'profile': return renderProfilePage();
-        case 'recommendation': return renderRecommendationPage();
-        case 'execution': return renderExecutionPage();
-        case 'dashboard': return renderDashboardPage();
-        case 'share': return renderSharePage();
-        default: return renderHomePage();
-    }
+  const renderers = {
+    home: typeof renderHomePage === 'function' ? renderHomePage : () => '<p>載入中...</p>',
+    goals: typeof renderGoalsPage === 'function' ? renderGoalsPage : () => '<p>載入中...</p>',
+    profile: typeof renderProfilePage === 'function' ? renderProfilePage : () => '<p>載入中...</p>',
+    recommendation: typeof renderRecommendationPage === 'function' ? renderRecommendationPage : () => '<p>載入中...</p>',
+    execution: typeof renderExecutionPage === 'function' ? renderExecutionPage : () => '<p>載入中...</p>',
+    dashboard: typeof renderDashboardPage === 'function' ? renderDashboardPage : () => '<p>載入中...</p>',
+    share: typeof renderSharePage === 'function' ? renderSharePage : () => '<p>載入中...</p>'
+  };
+  return (renderers[page] || (() => '<p>頁面不存在</p>'))();
 }
 
 function initPageScripts(page) {
-    switch(page) {
-        case 'home': initHomePage(); break;
-        case 'goals': initGoalsPage(); break;
-        case 'profile': initProfilePage(); break;
-        case 'recommendation': initRecommendationPage(); break;
-        case 'execution': initExecutionPage(); break;
-        case 'dashboard': initDashboardPage(); break;
-        case 'share': initSharePage(); break;
-    }
+  const inits = {
+    home: typeof initHomePage === 'function' ? initHomePage : null,
+    goals: typeof initGoalsPage === 'function' ? initGoalsPage : null,
+    profile: typeof initProfilePage === 'function' ? initProfilePage : null,
+    recommendation: typeof initRecommendationPage === 'function' ? initRecommendationPage : null,
+    execution: typeof initExecutionPage === 'function' ? initExecutionPage : null,
+    dashboard: typeof initDashboardPage === 'function' ? initDashboardPage : null,
+    share: typeof initSharePage === 'function' ? initSharePage : null
+  };
+  if (inits[page]) inits[page]();
 }
 
-// ===== Risk Disclosure Modal =====
+/* --- Player Card Update --- */
+function updatePlayerCard() {
+  const user = AppState.user || {};
+  document.getElementById('playerName').textContent = user.name || '冒險者';
+  document.getElementById('playerClass').textContent = user.class || '初心者';
+  document.getElementById('levelBadge').textContent = `Lv.${AppState.level}`;
+  document.getElementById('playerTitle').textContent = user.title || '初心者';
+  const needed = getXPForLevel(AppState.level);
+  const pct = Math.min((AppState.xp / needed) * 100, 100);
+  document.getElementById('xpBarFill').style.width = pct + '%';
+  document.getElementById('xpBarText').textContent = `${AppState.xp} / ${needed} XP`;
+}
+
+/* --- Theme Toggle --- */
+function toggleTheme() {
+  AppState.theme = AppState.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', AppState.theme);
+  localStorage.setItem('theme', AppState.theme);
+  const icon = document.getElementById('themeIcon');
+  icon.className = AppState.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+
+/* --- Sidebar Toggle (mobile) --- */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* --- Toast Notifications --- */
+function showToast(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('toastContainer');
+  const icons = {
+    success: '✅', warning: '⚠️', error: '❌', info: 'ℹ️',
+    achievement: '🏆'
+  };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type === 'achievement' ? 'achievement-toast' : type}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+    <span class="toast-message">${message}</span>
+  `;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+}
+
+/* --- Risk Disclosure Modal --- */
 function showRiskDisclosure(callback) {
-    const modal = document.getElementById('riskDisclosureModal');
-    if (modal) {
-        modal.classList.add('active');
-        modal.dataset.callback = callback || '';
-        
-        // Reset checkbox and button state
-        const checkbox = document.getElementById('riskAcknowledge');
-        const confirmBtn = document.getElementById('riskConfirmBtn');
-        if (checkbox) checkbox.checked = false;
-        if (confirmBtn) confirmBtn.disabled = true;
-        
-        // Update customer risk profile display
-        updateRiskProfileDisplay();
-        
-        // Setup checkbox listener
-        setupRiskCheckboxListener();
-        
-        logEvent('risk_disclosure_viewed');
-    }
-}
-
-function updateRiskProfileDisplay() {
-    const profileBadge = document.getElementById('riskProfileBadge');
-    const profileDesc = document.getElementById('riskProfileDesc');
-    const maxEquity = document.getElementById('maxEquity');
-    const maxHighRisk = document.getElementById('maxHighRisk');
-    
-    // Get user's risk profile from AppState or DemoDataService
-    let riskGrade = AppState.user.riskGrade || '穩健型';
-    let riskData = null;
-    
-    // Try to get from DemoDataService if available
-    if (typeof demoDataService !== 'undefined' && demoDataService.loaded) {
-        const riskProfiles = demoDataService.getRiskProfiles();
-        riskData = riskProfiles.find(p => p.name === riskGrade);
-    }
-    
-    // Default risk data
-    if (!riskData) {
-        riskData = {
-            name: riskGrade,
-            description: getDefaultRiskDescription(riskGrade),
-            maxEquityAllocation: getDefaultMaxEquity(riskGrade),
-            maxHighRiskAllocation: getDefaultMaxHighRisk(riskGrade)
-        };
-    }
-    
-    // Update UI
-    if (profileBadge) {
-        const gradeSpan = profileBadge.querySelector('.risk-grade');
-        if (gradeSpan) gradeSpan.textContent = riskData.name;
-    }
-    
-    if (profileDesc) {
-        profileDesc.textContent = riskData.description;
-    }
-    
-    if (maxEquity) {
-        maxEquity.textContent = Math.round(riskData.maxEquityAllocation * 100) + '%';
-    }
-    
-    if (maxHighRisk) {
-        maxHighRisk.textContent = Math.round(riskData.maxHighRiskAllocation * 100) + '%';
-    }
-}
-
-function getDefaultRiskDescription(grade) {
-    const descriptions = {
-        '保守型': '追求資本保護，願意接受較低報酬以換取穩定性',
-        '穩健型': '願意承擔適度風險以追求較佳報酬，重視長期穩健成長',
-        '積極型': '願意承擔較高風險以追求較高報酬，有較長投資期限',
-        '激進型': '追求最大化報酬，能夠承受高度波動和潛在虧損'
-    };
-    return descriptions[grade] || descriptions['穩健型'];
-}
-
-function getDefaultMaxEquity(grade) {
-    const limits = { '保守型': 0.10, '穩健型': 0.50, '積極型': 0.75, '激進型': 1.0 };
-    return limits[grade] || 0.50;
-}
-
-function getDefaultMaxHighRisk(grade) {
-    const limits = { '保守型': 0, '穩健型': 0.20, '積極型': 0.40, '激進型': 0.60 };
-    return limits[grade] || 0.20;
-}
-
-function setupRiskCheckboxListener() {
-    const checkbox = document.getElementById('riskAcknowledge');
-    const confirmBtn = document.getElementById('riskConfirmBtn');
-    
-    if (checkbox && confirmBtn) {
-        // Remove existing listeners to avoid duplicates
-        const newCheckbox = checkbox.cloneNode(true);
-        checkbox.parentNode.replaceChild(newCheckbox, checkbox);
-        
-        newCheckbox.addEventListener('change', (e) => {
-            confirmBtn.disabled = !e.target.checked;
-            if (e.target.checked) {
-                confirmBtn.classList.add('pulse-animation');
-                setTimeout(() => confirmBtn.classList.remove('pulse-animation'), 500);
-            }
-        });
-    }
+  const modal = document.getElementById('riskModal');
+  modal.classList.add('active');
+  window._riskCallback = callback;
 }
 
 function closeRiskModal() {
-    const modal = document.getElementById('riskDisclosureModal');
-    if (modal) {
-        modal.classList.remove('active');
-        logEvent('risk_disclosure_closed');
-    }
+  document.getElementById('riskModal').classList.remove('active');
 }
 
-function confirmRiskDisclosure() {
-    AppState.riskDisclosureAcknowledged = true;
-    logEvent('risk_disclosure_acknowledged', {
-        riskGrade: AppState.user.riskGrade || '穩健型',
-        timestamp: new Date().toISOString()
-    });
-    closeRiskModal();
-    
-    // Execute callback if exists
-    const modal = document.getElementById('riskDisclosureModal');
-    if (modal && modal.dataset.callback) {
-        eval(modal.dataset.callback);
-    }
-    
-    showToast('success', '已確認風險揭露', '您可以繼續查看投資建議');
+function acknowledgeRisk() {
+  AppState.riskDisclosureAcknowledged = true;
+  logEvent('risk_disclosure_acknowledged');
+  closeRiskModal();
+  if (window._riskCallback) {
+    window._riskCallback();
+    window._riskCallback = null;
+  }
 }
 
-function requestHumanAdvisor() {
-    logEvent('human_advisor_requested', {
-        from: 'risk_disclosure_modal',
-        riskGrade: AppState.user.riskGrade
-    });
-    closeRiskModal();
-    showToast('info', '已收到您的請求', '理財顧問將在 1 個工作天內與您聯繫');
+/* --- Notification Panel --- */
+function toggleNotifications() {
+  document.getElementById('notifModal').classList.toggle('active');
 }
 
-// ===== Toast Notifications =====
-function showToast(type, title, message) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    
-    const icons = {
-        success: 'fa-check-circle',
-        warning: 'fa-exclamation-triangle',
-        error: 'fa-times-circle',
-        info: 'fa-info-circle'
-    };
-    
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-        <span class="toast-icon"><i class="fas ${icons[type]}"></i></span>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    container.appendChild(toast);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 5000);
+function closeNotifications() {
+  document.getElementById('notifModal').classList.remove('active');
 }
 
-// ===== Utility Functions =====
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('zh-TW', {
-        style: 'currency',
-        currency: 'TWD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
+/* --- Chatbot Toggle --- */
+function toggleChatbot() {
+  document.getElementById('chatbotPanel').classList.toggle('open');
 }
 
-function formatNumber(num) {
-    return new Intl.NumberFormat('zh-TW').format(num);
+/* --- Logout --- */
+function logout() {
+  sessionStorage.clear();
+  window.location.href = 'login.html';
 }
 
-function formatDate(date) {
-    return new Intl.DateTimeFormat('zh-TW', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    }).format(new Date(date));
-}
-
-function calculateMonthsBetween(startDate, endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-}
-
-// Simple chart rendering (bar chart simulation)
-function renderSimpleChart(containerId, data, options = {}) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    const maxValue = Math.max(...data.map(d => d.value));
-    
-    let html = '<div class="chart-area">';
-    data.forEach((item, index) => {
-        const height = (item.value / maxValue) * 100;
-        html += `
-            <div class="chart-bar" 
-                 style="height: ${height}%;" 
-                 title="${item.label}: ${formatNumber(item.value)}"
-                 data-value="${item.value}">
-            </div>
-        `;
-    });
-    html += '</div>';
-    
-    container.innerHTML = html;
-}
-
-// Donut chart simulation (CSS-based)
-function renderDonutChart(containerId, data) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    const colors = ['#d4af37', '#3498db', '#27ae60', '#e74c3c', '#9b59b6'];
-    let cumulativePercent = 0;
-    let gradientStops = [];
-    
-    data.forEach((item, index) => {
-        const startPercent = cumulativePercent;
-        cumulativePercent += item.percent;
-        gradientStops.push(`${colors[index % colors.length]} ${startPercent * 3.6}deg ${cumulativePercent * 3.6}deg`);
-    });
-    
-    container.innerHTML = `
-        <svg viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="20"/>
-            ${renderDonutSegments(data, colors)}
-            <circle cx="50" cy="50" r="30" fill="#2d3e50"/>
-        </svg>
-    `;
-}
-
-function renderDonutSegments(data, colors) {
-    let segments = '';
-    let currentAngle = -90; // Start from top
-    
-    data.forEach((item, index) => {
-        const angle = (item.percent / 100) * 360;
-        const largeArc = angle > 180 ? 1 : 0;
-        
-        const startX = 50 + 40 * Math.cos((currentAngle * Math.PI) / 180);
-        const startY = 50 + 40 * Math.sin((currentAngle * Math.PI) / 180);
-        const endX = 50 + 40 * Math.cos(((currentAngle + angle) * Math.PI) / 180);
-        const endY = 50 + 40 * Math.sin(((currentAngle + angle) * Math.PI) / 180);
-        
-        segments += `
-            <path d="M 50 50 L ${startX} ${startY} A 40 40 0 ${largeArc} 1 ${endX} ${endY} Z" 
-                  fill="${colors[index % colors.length]}" 
-                  opacity="0.8"/>
-        `;
-        
-        currentAngle += angle;
-    });
-    
-    return segments;
-}
-
-// ===== API Stub Functions (Simulated) =====
+/* --- Simulated API --- */
 const API = {
-    async createGoal(goalData) {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const goal = {
-            id: 'goal_' + Date.now(),
-            ...goalData,
-            createdAt: new Date().toISOString()
-        };
-        AppState.goals.push(goal);
-        AppState.currentGoal = goal;
-        logEvent('goal_created', { goalId: goal.id, goalType: goal.type });
-        return goal;
-    },
-    
-    async submitKYC(answers) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        // Calculate risk score based on answers
-        const totalScore = Object.values(answers).reduce((sum, val) => sum + val, 0);
-        const maxScore = Object.keys(answers).length * 4;
-        const riskScore = Math.round((totalScore / maxScore) * 100);
-        
-        let riskGrade;
-        if (riskScore <= 30) riskGrade = '保守型';
-        else if (riskScore <= 50) riskGrade = '穩健型';
-        else if (riskScore <= 70) riskGrade = '成長型';
-        else riskGrade = '積極型';
-        
-        AppState.user.riskScore = riskScore;
-        AppState.user.riskGrade = riskGrade;
-        AppState.profile = { answers, riskScore, riskGrade };
-        
-        logEvent('kyc_completed', { riskScore, riskGrade });
-        return { riskScore, riskGrade };
-    },
-    
-    async generateRecommendation() {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 嘗試從資料源取得建議配置
-        let allocation = [
-            { name: '全球股票型基金A', percent: 40, risk: 'high' },
-            { name: '新興市場債券基金B', percent: 25, risk: 'medium' },
-            { name: '投資級債券基金C', percent: 20, risk: 'low' },
-            { name: '貨幣市場基金D', percent: 15, risk: 'very-low' }
+  createGoal(goalData) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        AppState.currentGoal = goalData;
+        AppState.goals = AppState.goals || [];
+        AppState.goals.push(goalData);
+        logEvent('goal_captured', goalData);
+        resolve({ success: true, goalId: 'goal_' + Date.now() });
+      }, 800);
+    });
+  },
+
+  semanticTransform(goalText) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        logEvent('semantic_transformed');
+        resolve({
+          success: true,
+          parameters: {
+            targetAmount: 3000000,
+            monthlyInvest: 15000,
+            years: 10,
+            riskTolerance: 'moderate'
+          }
+        });
+      }, 1000);
+    });
+  },
+
+  submitKYC(answers) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const score = answers.reduce((s, a) => s + a, 0);
+        const maxScore = answers.length * 4;
+        const pct = score / maxScore;
+        let grade, label;
+        if (pct < 0.3) { grade = 'C1'; label = '保守型賢者'; }
+        else if (pct < 0.5) { grade = 'C2'; label = '穩健型冒險家'; }
+        else if (pct < 0.7) { grade = 'C3'; label = '平衡型戰士'; }
+        else if (pct < 0.85) { grade = 'C4'; label = '積極型勇者'; }
+        else { grade = 'C5'; label = '激進型劍聖'; }
+        AppState.profile = { answers, riskScore: score, riskGrade: grade, riskLabel: label };
+        logEvent('kyc_completed', { riskGrade: grade });
+        resolve({ success: true, riskGrade: grade, riskLabel: label, riskScore: score, maxScore });
+      }, 1200);
+    });
+  },
+
+  generateRecommendation() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const allocation = [
+          { name: '國內債券型基金', pct: 30, color: '#4CAF50' },
+          { name: '全球股票型基金', pct: 25, color: '#2196F3' },
+          { name: '科技 ETF', pct: 20, color: '#9C27B0' },
+          { name: 'AI 主題基金', pct: 15, color: '#FF9800' },
+          { name: '貨幣市場基金', pct: 10, color: '#607D8B' }
         ];
-        
-        // 使用真實資料源的建議
-        if (typeof demoDataService !== 'undefined' && demoDataService.loaded) {
-            const recs = demoDataService.getCustomerRecommendations('cust_001');
-            if (recs && recs.length > 0) {
-                const latestRec = recs[0];
-                allocation = latestRec.allocation.map(a => ({
-                    name: a.productName,
-                    percent: a.percent,
-                    risk: a.percent > 30 ? 'high' : a.percent > 20 ? 'medium' : 'low'
-                }));
-            }
-        }
-        
-        const riskGrade = AppState.user.riskGrade || '穩健型';
-        const goalName = AppState.currentGoal?.typeName || '理財目標';
-        
-        const recommendation = {
-            id: 'rec_' + Date.now(),
-            allocation: allocation,
-            rationale: `根據您的${riskGrade}風險屬性和「${goalName}」目標，我們建議採用股債混合的配置策略。這種配置方式就像一支平衡的籃球隊——既有進攻能力（股票），也有穩固的防守（債券），能在各種市場環境下保持競爭力。`,
-            riskScenario: '在一般市場波動情況下，您的投資組合可能在短期內出現5-15%的價值變動。這就像搭乘長途飛機時遇到的氣流顛簸，雖然會有起伏，但只要保持航向，最終會安全抵達目的地。',
-            worstCase: '在極端市場情況下（如2008年金融海嘯或2020年疫情初期），您的投資組合最大可能損失約25-30%。但歷史經驗顯示，採用定期定額策略的投資者，在市場回升後通常能獲得更好的長期報酬。',
-            notes: [
-                '建議持有期間至少3-5年',
-                '每季度檢視一次配置比例',
-                '可設定再平衡提醒'
-            ],
-            sourceRef: 'DOC-2026-001-v2.3',
-            generatedAt: new Date().toISOString()
+        AppState.recommendation = {
+          allocation,
+          rationale: '根據你的風險屬性與人生目標，我們以「穩健成長」為核心策略，搭配適度的科技成長題材，兼顧防禦與進攻。',
+          riskScenario: '在極端市場情況下（如 2020 年疫情），此組合最大回撤約 -15%，但歷史上均在 12 個月內回復。',
+          worstCase: '最壞情況下，你可能面臨 15~20% 的暫時性資產減損，但以 10 年以上的投資期間來看，長期正報酬機率超過 90%。',
+          productPool: ['fund_001', 'fund_002', 'fund_003', 'etf_001']
         };
-        
-        AppState.recommendation = recommendation;
-        logEvent('recommendation_generated', { recId: recommendation.id });
-        
-        // Generate action list
-        AppState.actionList = [
-            { type: 'initial', name: '首次投入', amount: 50000, frequency: 'once' },
-            { type: 'regular', name: '定期定額', amount: 5000, frequency: 'monthly' },
-            { type: 'rebalance', name: '再平衡檢視', amount: null, frequency: 'quarterly' }
-        ];
-        
-        return recommendation;
-    },
-    
-    async pretradeCheck(orders) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const checks = [
-            { name: 'KYC 適配性檢核', status: 'passed' },
-            { name: '風險等級匹配', status: 'passed' },
-            { name: '投資限額檢查', status: 'passed' },
-            { name: '商品池合規確認', status: 'passed' },
-            { name: '交易時段確認', status: 'passed' }
-        ];
-        
-        logEvent('pretrade_check_passed', { checks: checks.length });
-        return { passed: true, checks };
-    },
-    
-    async submitOrder(orderData) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const order = {
-            id: 'order_' + Date.now(),
-            ...orderData,
-            status: 'completed',
-            submittedAt: new Date().toISOString()
-        };
-        
-        logEvent('trade_submitted', { orderId: order.id, amount: orderData.amount });
-        logEvent('action_list_accepted');
-        
-        return order;
-    },
-    
-    async getDashboardData() {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        return {
-            totalAssets: 156800,
-            totalReturn: 12.5,
-            goalProgress: 32,
-            monthlyInvestment: 5000,
-            consecutiveDays: 180,
-            assetHistory: [
-                { month: '2025-07', value: 50000 },
-                { month: '2025-08', value: 55200 },
-                { month: '2025-09', value: 58900 },
-                { month: '2025-10', value: 62300 },
-                { month: '2025-11', value: 71500 },
-                { month: '2025-12', value: 85200 },
-                { month: '2026-01', value: 156800 }
-            ],
-            milestones: [
-                { id: 1, title: '開始投資之旅', icon: '🚀', achieved: true },
-                { id: 2, title: '連續投入30天', icon: '🔥', achieved: true },
-                { id: 3, title: '資產突破10萬', icon: '💰', achieved: true },
-                { id: 4, title: '連續投入180天', icon: '⭐', achieved: true, isNew: true },
-                { id: 5, title: '資產突破50萬', icon: '🏆', achieved: false, progress: 31 }
-            ]
-        };
-    },
-    
-    async generateShareCard() {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        logEvent('share_card_generated');
-        
-        return {
-            achievement: '連續投入180天',
-            progress: '32%',
-            days: 180,
-            message: '我正在用 Fin_WMAI 規劃我的理想人生！'
-        };
-    }
+        logEvent('personalized_plan_generated');
+        resolve({ success: true, data: AppState.recommendation });
+      }, 2000);
+    });
+  },
+
+  pretradeCheck() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const passed = AppState.profile.riskGrade !== 'C5';
+        if (passed) logEvent('order_pretrade_checked_passed');
+        else logEvent('order_pretrade_checked_blocked');
+        resolve({ passed, checks: [
+          { name: 'KYC 驗證', status: 'passed' },
+          { name: '風險匹配', status: passed ? 'passed' : 'failed' },
+          { name: '額度確認', status: 'passed' },
+          { name: '合規審查', status: 'passed' },
+          { name: '交易時段', status: 'passed' }
+        ]});
+      }, 3000);
+    });
+  },
+
+  submitOrder() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        logEvent('order_submitted');
+        resolve({ success: true, orderId: 'ORD_' + Date.now() });
+      }, 1500);
+    });
+  },
+
+  getDashboardData() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve({
+          totalAsset: 156800,
+          goalProgress: 12,
+          monthlyInvest: 15000,
+          streak: 28,
+          months: 6,
+          driftScore: 8.2,
+          holdings: [
+            { name: '國內債券型基金', cost: 45000, currentValue: 47040 },
+            { name: '全球股票型基金', cost: 40000, currentValue: 39200 },
+            { name: '科技 ETF', cost: 29800, currentValue: 31360 },
+            { name: 'AI 主題基金', cost: 21600, currentValue: 23520 },
+            { name: '貨幣市場基金', cost: 15600, currentValue: 15680 }
+          ],
+          milestones: [
+            { title: '🎯 完成第一個目標設定', desc: '踏出理財第一步', achieved: true },
+            { title: '🛡️ 通過風險評估', desc: '了解自己的冒險風格', achieved: true },
+            { title: '📊 取得專屬方案', desc: '收到 AI 客製化推薦', achieved: true },
+            { title: '⚔️ 首次交易成功', desc: '一鍵下單完成', achieved: true },
+            { title: '💰 投資滿 3 個月', desc: '持續定期定額', achieved: false },
+            { title: '🏆 累積報酬 10%', desc: '冒險收益達標', achieved: false }
+          ],
+          chartData: {
+            week: [148000, 149500, 152000, 150800, 153200, 155000, 156800],
+            month: [120000, 125000, 130000, 138000, 142000, 148000, 156800]
+          }
+        });
+      }, 1000);
+    });
+  }
 };
 
-// ===== 登入狀態管理 =====
-function checkLoginStatus() {
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-    const currentUser = sessionStorage.getItem('currentUser');
-    
-    if (isLoggedIn && currentUser) {
-        try {
-            const user = JSON.parse(currentUser);
-            // 更新顯示的使用者資訊
-            updateUserDisplay(user);
-            // 更新 AppState
-            AppState.user.name = user.name;
-            AppState.user.status = user.level;
-            return true;
-        } catch (e) {
-            console.error('解析使用者資料失敗:', e);
-        }
-    }
-    return false;
+/* --- Chart Helpers --- */
+function renderDonutChart(containerId, allocation) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const size = 200;
+  const r = 70;
+  const cx = size / 2, cy = size / 2;
+  let cumPct = 0;
+  let paths = '';
+  allocation.forEach(item => {
+    const startAngle = cumPct * 3.6 * (Math.PI / 180);
+    cumPct += item.pct;
+    const endAngle = cumPct * 3.6 * (Math.PI / 180);
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const largeArc = item.pct > 50 ? 1 : 0;
+    paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${item.color}" opacity="0.85"/>`;
+  });
+  container.innerHTML = `
+    <svg viewBox="0 0 ${size} ${size}">${paths}
+      <circle cx="${cx}" cy="${cy}" r="45" fill="var(--bg-card)"/>
+    </svg>
+    <div class="donut-center">
+      <div class="center-label">投資組合</div>
+      <div class="center-value">100%</div>
+    </div>`;
 }
 
-function updateUserDisplay(user) {
-    const nameEl = document.getElementById('displayUserName');
-    const levelEl = document.getElementById('displayUserLevel');
-    
-    if (nameEl) nameEl.textContent = user.name || '訪客';
-    if (levelEl) levelEl.textContent = user.level || '尚未登入';
+function renderBarChart(containerId, data, labels) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const max = Math.max(...data) * 1.1;
+  container.innerHTML = data.map((v, i) => {
+    const h = (v / max) * 160;
+    return `<div class="bar" style="height:${h}px;">
+      <span class="bar-value">${(v / 1000).toFixed(0)}K</span>
+      <span class="bar-label">${labels ? labels[i] : ''}</span>
+    </div>`;
+  }).join('');
 }
 
-function showUserMenu() {
-    const menu = document.getElementById('userMenu');
-    if (menu) {
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    }
+/* --- Init App --- */
+function initApp() {
+  // Check login
+  if (!sessionStorage.getItem('isLoggedIn')) {
+    window.location.href = 'login.html';
+    return;
+  }
+  // Load user
+  try {
+    AppState.user = JSON.parse(sessionStorage.getItem('currentUser'));
+    AppState.level = AppState.user?.level || 1;
+    AppState.xp = AppState.user?.xp || 0;
+  } catch(e) {
+    AppState.user = { name: '冒險者', class: '初心者', level: 1, xp: 0, title: '初心者' };
+  }
+  // Apply theme
+  document.documentElement.setAttribute('data-theme', AppState.theme);
+  if (AppState.theme === 'dark') {
+    document.getElementById('themeIcon').className = 'fas fa-sun';
+  }
+  // Show app
+  const overlay = document.getElementById('loadingOverlay');
+  const appLayout = document.getElementById('appLayout');
+  setTimeout(() => {
+    overlay.classList.add('hide');
+    appLayout.style.display = 'flex';
+    updatePlayerCard();
+    updateQuestNav();
+    navigateTo('home');
+    // Init chatbot
+    if (typeof Chatbot !== 'undefined') Chatbot.init();
+  }, 1200);
 }
 
-function showLoginInfo() {
-    const currentUser = sessionStorage.getItem('currentUser');
-    if (currentUser) {
-        try {
-            const user = JSON.parse(currentUser);
-            const loginTime = new Date(user.loginTime).toLocaleString('zh-TW');
-            const method = user.loginMethod === 'qr-code' ? 'QR Code 掃描' : '密碼登入';
-            
-            alert(`登入資訊\n\n` +
-                  `使用者：${user.name}\n` +
-                  `等級：${user.level}\n` +
-                  `帳號：${user.id}\n` +
-                  `登入時間：${loginTime}\n` +
-                  `登入方式：${method}`);
-        } catch (e) {
-            console.error('顯示登入資訊失敗:', e);
-        }
-    }
-    // 關閉選單
-    document.getElementById('userMenu').style.display = 'none';
-}
+/* Global helper — called from HTML onclick */
+function sendChat() { if (typeof Chatbot !== 'undefined') Chatbot.send(); }
 
-function handleLogout() {
-    if (confirm('確定要登出嗎？')) {
-        sessionStorage.removeItem('isLoggedIn');
-        sessionStorage.removeItem('currentUser');
-        
-        showToast('已成功登出', 'success');
-        
-        // 跳轉到登入頁
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1000);
-    }
-    // 關閉選單
-    document.getElementById('userMenu').style.display = 'none';
-}
-
-// 點擊其他地方關閉使用者選單
-document.addEventListener('click', (e) => {
-    const userProfile = document.getElementById('userProfile');
-    const userMenu = document.getElementById('userMenu');
-    
-    if (userProfile && userMenu && !userProfile.contains(e.target)) {
-        userMenu.style.display = 'none';
-    }
-});
-
-// 初始化時檢查登入狀態
-const originalInitApp = initApp;
-initApp = function() {
-    // 檢查登入狀態，如果未登入則導向登入頁面
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-    if (!isLoggedIn) {
-        // 未登入，導向登入頁面
-        window.location.href = 'login.html';
-        return;
-    }
-    // 已登入，更新使用者顯示
-    checkLoginStatus();
-    // 呼叫原始初始化
-    originalInitApp();
-};
-
-// Export for global access
-window.AppState = AppState;
-window.IPIcons = IPIcons;
-window.API = API;
-window.logEvent = logEvent;
-window.navigateTo = navigateTo;
-window.toggleSidebar = toggleSidebar;
-window.showRiskDisclosure = showRiskDisclosure;
-window.closeRiskModal = closeRiskModal;
-window.confirmRiskDisclosure = confirmRiskDisclosure;
-window.requestHumanAdvisor = requestHumanAdvisor;
-window.showToast = showToast;
-window.formatCurrency = formatCurrency;
-window.formatNumber = formatNumber;
-window.formatDate = formatDate;
-window.calculateMonthsBetween = calculateMonthsBetween;
-window.renderSimpleChart = renderSimpleChart;
-window.renderDonutChart = renderDonutChart;
-window.initApp = initApp;
-window.checkLoginStatus = checkLoginStatus;
-window.showUserMenu = showUserMenu;
-window.showLoginInfo = showLoginInfo;
-window.handleLogout = handleLogout;
-
+document.addEventListener('DOMContentLoaded', initApp);

@@ -1,340 +1,260 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fin_WMAI - 智慧投資理財規劃系統</title>
-    <!-- 登入檢查：未登入立即導向登入頁 -->
-    <script>
-        (function() {
-            if (!sessionStorage.getItem('isLoggedIn')) {
-                window.location.replace('login.html');
-            }
-        })();
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/pages.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>薪守村 — 冒險之旅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/pages.css">
 </head>
 <body>
-    <!-- Loading Overlay with Intro Video -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <video id="introVideo" class="loading-video" autoplay muted playsinline>
-            <source src="IP_ICON/Intro.mp4" type="video/mp4">
-            <!-- Fallback image if video not supported -->
-            <img src="IP_ICON/IP_THINKING.png" alt="載入中" class="loading-mascot">
-        </video>
-        <p class="loading-text">正在為您準備最佳體驗...</p>
-    </div>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <img src="IP_ICON/IP_HELLO.png" alt="小雲" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--color-gold);">
+    <div class="village-title">薪 守 村</div>
+    <div class="loading-text">正在進入村莊...</div>
+    <div class="loading-spinner"></div>
+  </div>
 
-    <div class="app-wrapper">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <img src="IP_ICON/IP_HELLO.png" alt="Fin_WMAI" class="sidebar-logo">
-                <div>
-                    <div class="sidebar-title">Fin_WMAI</div>
-                    <div class="sidebar-subtitle">智慧投資理財規劃</div>
-                </div>
-                <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="切換淺色模式">☀️</button>
-            </div>
+  <div class="app-layout" id="appLayout" style="display:none;">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="IP_ICON/IP_HELLO.png" alt="薪守村">
+          <span class="village-name">薪守村</span>
+          <span class="village-subtitle">守護你的 1st Salary</span>
+        </div>
+      </div>
 
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-page="home" onclick="navigateTo('home')">
-                            <span class="nav-icon"><i class="fas fa-home"></i></span>
-                            <span>首頁</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-page="goals" onclick="navigateTo('goals')">
-                            <span class="nav-icon"><i class="fas fa-bullseye"></i></span>
-                            <span>目標設定</span>
-                            <span class="nav-badge">新</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-page="profile" onclick="navigateTo('profile')">
-                            <span class="nav-icon"><i class="fas fa-user-shield"></i></span>
-                            <span>風險評估</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-page="recommendation" onclick="navigateTo('recommendation')">
-                            <span class="nav-icon"><i class="fas fa-magic"></i></span>
-                            <span>AI 建議</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-page="execution" onclick="navigateTo('execution')">
-                            <span class="nav-icon"><i class="fas fa-bolt"></i></span>
-                            <span>交易執行</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-page="dashboard" onclick="navigateTo('dashboard')">
-                            <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
-                            <span>資產儀表板</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-page="share" onclick="navigateTo('share')">
-                            <span class="nav-icon"><i class="fas fa-share-alt"></i></span>
-                            <span>分享成就</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+      <!-- Player Card -->
+      <div class="player-card" id="playerCard">
+        <div class="player-name" id="playerName">冒險者</div>
+        <div class="player-class" id="playerClass">初心者</div>
+        <div class="xp-bar-container">
+          <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+          <span class="xp-bar-text" id="xpBarText">0 / 100 XP</span>
+        </div>
+        <div class="player-level">
+          <span class="level-badge" id="levelBadge">Lv.1</span>
+          <span id="playerTitle">初心者</span>
+        </div>
+      </div>
 
-            <div class="sidebar-footer">
-                <div class="user-profile" id="userProfile" onclick="showUserMenu()">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-info">
-                        <div class="user-name" id="displayUserName">訪客</div>
-                        <div class="user-status" id="displayUserLevel">尚未登入</div>
-                    </div>
-                    <i class="fas fa-caret-up user-menu-arrow"></i>
-                </div>
-                <!-- 使用者選單 -->
-                <div class="user-menu" id="userMenu" style="display: none;">
-                    <a href="#" class="user-menu-item" onclick="navigateTo('profile')">
-                        <i class="fas fa-user-cog"></i> 個人設定
-                    </a>
-                    <a href="#" class="user-menu-item" onclick="showLoginInfo()">
-                        <i class="fas fa-info-circle"></i> 登入資訊
-                    </a>
-                    <div class="user-menu-divider"></div>
-                    <a href="#" class="user-menu-item logout" onclick="handleLogout()">
-                        <i class="fas fa-sign-out-alt"></i> 登出
-                    </a>
-                </div>
-            </div>
-        </aside>
+      <!-- Quest Navigation -->
+      <nav class="quest-nav" id="questNav">
+        <div class="nav-section-title">冒險旅程</div>
 
-        <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleSidebar()">
+        <div class="nav-item active" data-page="home" onclick="navigateTo('home')">
+          <div class="nav-icon">🏠</div>
+          <span class="nav-label">村莊廣場</span>
+          <span class="quest-status completed"></span>
+        </div>
+
+        <div class="nav-section-title">主線任務</div>
+
+        <div class="nav-item" data-page="goals" onclick="navigateTo('goals')">
+          <div class="nav-icon">🌟</div>
+          <span class="nav-label">初心者 — 目標設定</span>
+          <span class="quest-status available"></span>
+        </div>
+
+        <div class="nav-item" data-page="profile" onclick="navigateTo('profile')">
+          <div class="nav-icon">🛡️</div>
+          <span class="nav-label">職業說明NPC</span>
+          <span class="quest-status locked"></span>
+        </div>
+
+        <div class="nav-item" data-page="recommendation" onclick="navigateTo('recommendation')">
+          <div class="nav-icon">⚔️</div>
+          <span class="nav-label">專屬特殊技能</span>
+          <span class="quest-status locked"></span>
+        </div>
+
+        <div class="nav-item" data-page="execution" onclick="navigateTo('execution')">
+          <div class="nav-icon">🏰</div>
+          <span class="nav-label">攻克據點</span>
+          <span class="quest-status locked"></span>
+        </div>
+
+        <div class="nav-item" data-page="dashboard" onclick="navigateTo('dashboard')">
+          <div class="nav-icon">🏆</div>
+          <span class="nav-label">戰績回顧</span>
+          <span class="quest-status locked"></span>
+        </div>
+
+        <div class="nav-section-title">支線任務</div>
+
+        <div class="nav-item" data-page="share" onclick="navigateTo('share')">
+          <div class="nav-icon">📜</div>
+          <span class="nav-label">冒險日誌分享</span>
+          <span class="quest-status locked"></span>
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="footer-actions">
+          <button class="theme-toggle" onclick="toggleTheme()" title="切換主題">
+            <i class="fas fa-moon" id="themeIcon"></i>
+          </button>
+          <span style="font-size:0.72rem;color:var(--text-sidebar);">v1.1</span>
+          <button class="logout-btn" onclick="logout()" title="離開村莊">
+            <i class="fas fa-door-open"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="menu-toggle" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
+          </button>
+          <div class="page-title-area">
+            <h1 id="pageTitle">村莊廣場</h1>
+            <div class="breadcrumb" id="breadcrumb">薪守村 / 村莊廣場</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="header-btn" onclick="toggleNotifications()" title="村莊公告">
+            <i class="fas fa-bell"></i>
+            <span class="badge" id="notifBadge">3</span>
+          </button>
+          <button class="header-btn" onclick="toggleChatbot()" title="呼叫小雲 NPC">
+            <i class="fas fa-comment-dots"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content" id="mainContent">
+        <!-- Dynamic page content loaded here -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Risk Disclosure Modal -->
+  <div class="modal-overlay" id="riskModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2><i class="fas fa-shield-halved"></i> 風險揭露聲明</h2>
+        <button class="modal-close" onclick="closeRiskModal()">&times;</button>
+      </div>
+      <div id="riskModalBody">
+        <div class="npc-dialog">
+          <img src="IP_ICON/IP_THINKING.png" alt="小雲" class="npc-avatar">
+          <div class="npc-bubble">
+            <div class="npc-name">NPC 小雲 — 風險提醒</div>
+            <p>冒險者，在你繼續之前，有些重要的事情必須先了解：</p>
+          </div>
+        </div>
+        <div class="card mt-2" style="border-left:4px solid var(--color-orange);">
+          <h3 style="font-size:0.9rem;margin-bottom:8px;">⚠️ 投資風險聲明</h3>
+          <ul style="font-size:0.82rem;line-height:1.8;padding-left:20px;color:var(--text-secondary);">
+            <li>投資一定有風險，基金投資有賺有賠</li>
+            <li>申購前應詳閱公開說明書</li>
+            <li>過去績效不代表未來收益</li>
+            <li>系統建議僅供參考，非投資建議</li>
+            <li>最壞情況下，您可能損失部分或全部投資本金</li>
+          </ul>
+        </div>
+        <div class="card mt-2" style="border-left:4px solid var(--color-blue);">
+          <h3 style="font-size:0.9rem;margin-bottom:8px;">📋 適合性聲明</h3>
+          <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
+            本系統依據您的風險屬性與投資目標提供個人化建議。如建議內容與您的認知不符，請立即向理財專員諮詢。您有權隨時終止或調整投資計劃。
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeRiskModal()">稍後再看</button>
+        <button class="btn btn-gold" onclick="acknowledgeRisk()">
+          <i class="fas fa-check"></i> 我已了解風險
         </button>
-
-        <!-- Main Content Area -->
-        <main class="main-content" id="mainContent">
-            <!-- Pages will be loaded here -->
-        </main>
+      </div>
     </div>
+  </div>
 
-    <!-- Risk Disclosure Modal -->
-    <div class="modal-overlay" id="riskDisclosureModal">
-        <div class="modal modal-lg risk-disclosure-modal">
-            <div class="modal-header risk-modal-header">
-                <div class="risk-header-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h3 class="modal-title">
-                    <i class="fas fa-exclamation-triangle text-warning"></i>
-                    投資風險揭露聲明
-                </h3>
-                <p class="risk-subtitle">請仔細閱讀以下重要資訊</p>
-            </div>
-            <div class="modal-body risk-modal-body" id="riskDisclosureContent">
-                <div class="risk-disclosure-content">
-                    <!-- 投資警語 -->
-                    <div class="alert alert-warning risk-warning-banner">
-                        <span class="alert-icon"><i class="fas fa-exclamation-circle"></i></span>
-                        <div>
-                            <strong>⚠️ 投資警語</strong>
-                            <p class="mb-0">投資一定有風險，基金投資有賺有賠，申購前應詳閱公開說明書。過往績效不代表未來表現。</p>
-                        </div>
-                    </div>
-
-                    <!-- 客戶風險屬性顯示 -->
-                    <div class="customer-risk-profile" id="customerRiskProfile">
-                        <h4><i class="fas fa-user-shield"></i> 您的風險屬性</h4>
-                        <div class="risk-profile-card">
-                            <div class="risk-profile-badge" id="riskProfileBadge">
-                                <span class="risk-grade">穩健型</span>
-                            </div>
-                            <div class="risk-profile-info">
-                                <p id="riskProfileDesc">願意承擔適度風險以追求較佳報酬，重視長期穩健成長</p>
-                                <div class="risk-limits">
-                                    <span><i class="fas fa-chart-pie"></i> 股票配置上限: <strong id="maxEquity">50%</strong></span>
-                                    <span><i class="fas fa-fire"></i> 高風險配置上限: <strong id="maxHighRisk">20%</strong></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 最壞狀況說明 -->
-                    <h4 class="section-title"><i class="fas fa-exclamation-triangle text-danger"></i> 最壞狀況說明</h4>
-                    <div class="worst-case-box">
-                        <div class="worst-case-item">
-                            <div class="worst-case-icon danger">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div>
-                                <strong>市場下跌風險</strong>
-                                <p>在極端市場情況下（如2008年金融海嘯），投資組合可能出現 <span class="text-danger">25-40%</span> 的短期損失</p>
-                            </div>
-                        </div>
-                        <div class="worst-case-item">
-                            <div class="worst-case-icon warning">
-                                <i class="fas fa-coins"></i>
-                            </div>
-                            <div>
-                                <strong>匯率風險</strong>
-                                <p>投資海外標的可能因匯率波動而影響實際報酬，匯率變動可達 <span class="text-warning">5-15%</span></p>
-                            </div>
-                        </div>
-                        <div class="worst-case-item">
-                            <div class="worst-case-icon info">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div>
-                                <strong>流動性風險</strong>
-                                <p>部分投資標的可能需要較長時間才能贖回，建議預留緊急預備金</p>
-                            </div>
-                        </div>
-                        <div class="worst-case-item">
-                            <div class="worst-case-icon secondary">
-                                <i class="fas fa-percentage"></i>
-                            </div>
-                            <div>
-                                <strong>費用成本</strong>
-                                <p>投資涉及申購手續費、管理費、保管費等成本，會影響實際報酬</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 合規提醒 -->
-                    <div class="compliance-notice">
-                        <h4><i class="fas fa-balance-scale"></i> 合規提醒</h4>
-                        <ul class="compliance-list">
-                            <li><i class="fas fa-check-circle text-success"></i> 所有建議均基於核准產品池，符合銀行內部規範</li>
-                            <li><i class="fas fa-check-circle text-success"></i> 系統已依據您的風險屬性進行適合度檢核</li>
-                            <li><i class="fas fa-check-circle text-success"></i> 投資建議可追溯至核准文件來源</li>
-                            <li><i class="fas fa-check-circle text-success"></i> 您可隨時要求轉介真人理財顧問諮詢</li>
-                        </ul>
-                    </div>
-
-                    <!-- 免責聲明 -->
-                    <div class="disclosure-notice">
-                        <h4><i class="fas fa-file-contract"></i> 免責聲明</h4>
-                        <p>本系統提供的建議僅供參考，不構成投資建議或招攬。投資決策應基於您自身的財務狀況、風險承受能力及投資目標。如有疑慮，建議諮詢專業理財顧問。</p>
-                        <p class="text-muted" style="font-size: 0.8rem;">資料來源：核准產品池 2026Q1 / 內部投資研究報告</p>
-                    </div>
-
-                    <!-- 確認勾選 -->
-                    <div class="risk-acknowledge-section">
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="riskAcknowledge">
-                            <label class="form-check-label" for="riskAcknowledge">
-                                <strong>✓ 我已閱讀並理解上述風險揭露內容，了解投資可能產生本金損失</strong>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer risk-modal-footer">
-                <button class="btn btn-outline" onclick="requestHumanAdvisor()">
-                    <i class="fas fa-user-tie"></i>
-                    轉介真人顧問
-                </button>
-                <button class="btn btn-secondary" onclick="closeRiskModal()">
-                    <i class="fas fa-times"></i>
-                    稍後再看
-                </button>
-                <button class="btn btn-primary" id="riskConfirmBtn" disabled onclick="confirmRiskDisclosure()">
-                    <i class="fas fa-check"></i>
-                    確認並繼續
-                </button>
-            </div>
+  <!-- Notification Panel -->
+  <div class="modal-overlay" id="notifModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2><i class="fas fa-bell"></i> 村莊公告</h2>
+        <button class="modal-close" onclick="closeNotifications()">&times;</button>
+      </div>
+      <div id="notifList">
+        <div class="card mb-2" style="border-left:4px solid var(--color-gold);">
+          <div style="font-size:0.75rem;color:var(--color-gold);font-weight:600;">🏆 成就解鎖</div>
+          <p style="font-size:0.85rem;margin-top:4px;">恭喜！你已成功登入薪守村，獲得「初心者」稱號</p>
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">剛剛</div>
         </div>
+        <div class="card mb-2" style="border-left:4px solid var(--color-green);">
+          <div style="font-size:0.75rem;color:var(--color-green);font-weight:600;">📋 新任務</div>
+          <p style="font-size:0.85rem;margin-top:4px;">主線任務「初心者 — 目標設定」已解鎖！</p>
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">1 分鐘前</div>
+        </div>
+        <div class="card mb-2" style="border-left:4px solid var(--color-blue);">
+          <div style="font-size:0.75rem;color:var(--color-blue);font-weight:600;">📰 市場情報</div>
+          <p style="font-size:0.85rem;margin-top:4px;">今日台股加權指數上漲 0.8%，AI 概念股表現亮眼</p>
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">30 分鐘前</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" onclick="closeNotifications()">關閉</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Toast Notification Container -->
-    <div class="toast-container" id="toastContainer"></div>
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Chatbot Button -->
-    <button class="chatbot-button" id="chatbotButton" onclick="toggleChatbot()" title="與小雲對話">
-        <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chatbot-avatar">
-        <span class="chatbot-badge">1</span>
-    </button>
+  <!-- Chatbot Panel -->
+  <button class="chatbot-toggle" id="chatbotToggle" onclick="toggleChatbot()">
+    <img src="IP_ICON/IP_HELLO.png" alt="小雲">
+  </button>
 
-    <!-- Chatbot Window -->
-    <div class="chatbot-window" id="chatbotWindow">
-        <div class="chatbot-header">
-            <div class="chatbot-header-info">
-                <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chatbot-header-avatar">
-                <div>
-                    <h4>小雲 ☁️</h4>
-                    <span class="chatbot-status">
-                        <span class="status-dot"></span>
-                        智慧理財助手
-                    </span>
-                </div>
-            </div>
-            <div class="chatbot-header-actions">
-                <button class="chatbot-action-btn" onclick="clearChat()" title="清除對話">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-                <button class="chatbot-action-btn" onclick="minimizeChatbot()" title="最小化">
-                    <i class="fas fa-minus"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div class="chatbot-messages" id="chatMessages">
-            <!-- Messages will be rendered here -->
-        </div>
-        
-        <div class="chatbot-quick-questions" id="quickQuestions">
-            <!-- Quick questions will be rendered here -->
-        </div>
-        
-        <div class="chatbot-input-area">
-            <input 
-                type="text" 
-                id="chatInput" 
-                class="chatbot-input" 
-                placeholder="請輸入您的問題，例如：我的資產、商品推薦..."
-                onkeypress="handleChatKeyPress(event)"
-            >
-            <button class="chatbot-send-btn" onclick="sendMessage()">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-        
-        <div class="chatbot-footer">
-            <span>💡 可查詢個人資產、持倉、商品資訊或理財問題</span>
-        </div>
+  <div class="chatbot-panel" id="chatbotPanel">
+    <div class="chatbot-header">
+      <div class="npc-info">
+        <img src="IP_ICON/IP_HELLO.png" alt="小雲">
+        <span>NPC 小雲</span>
+      </div>
+      <button class="close-chat" onclick="toggleChatbot()">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
+    <div class="chatbot-messages" id="chatMessages">
+      <div class="npc-dialog">
+        <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar" style="width:32px;height:32px;">
+        <div class="npc-bubble">
+          <div class="npc-name">小雲</div>
+          嗨～我是你的專屬 NPC 嚮導小雲！有任何關於理財冒險的問題都可以問我喔 ✨
+        </div>
+      </div>
+    </div>
+    <div class="chatbot-input-area">
+      <input type="text" id="chatInput" placeholder="向小雲提問..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
 
-    <!-- Scripts with cache busting -->
-    <script src="js/app.js?v=20260131"></script>
-    <script src="js/pages/home.js?v=20260131"></script>
-    <script src="js/pages/goals.js?v=20260131"></script>
-    <script src="js/pages/profile.js?v=20260131"></script>
-    <script src="js/pages/recommendation.js?v=20260131"></script>
-    <script src="js/pages/execution.js?v=20260131"></script>
-    <script src="js/pages/dashboard.js?v=20260131"></script>
-    <script src="js/pages/share.js?v=20260131"></script>
-    <script src="js/data-service.js?v=20260131"></script>
-    <script src="js/chatbot.js?v=20260131"></script>
-    <script src="js/demo.js?v=20260131"></script>
-    <script>
-        // Initialize app when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            initApp();
-            // Show demo hint
-            console.log('%c🎮 Fin_WMAI Prototype', 'font-size: 20px; font-weight: bold; color: #d4af37;');
-            console.log('%c按 Ctrl + D 開啟 Demo 控制面板', 'font-size: 14px; color: #6c757d;');
-            console.log('%c💬 點擊右下角小雲圖示開啟 AI 對話', 'font-size: 14px; color: #3498db;');
-        });
-    </script>
+  <!-- Scripts -->
+  <script src="js/data-service.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/pages/home.js"></script>
+  <script src="js/pages/goals.js"></script>
+  <script src="js/pages/profile.js"></script>
+  <script src="js/pages/recommendation.js"></script>
+  <script src="js/pages/execution.js"></script>
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/share.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script src="js/demo.js"></script>
 </body>
 </html>
