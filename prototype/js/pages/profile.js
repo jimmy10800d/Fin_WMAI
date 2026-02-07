@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    【職業說明NPC】KYC 評估 — Feature B
    ================================================ */
 const KYCQuestions = [
@@ -70,9 +70,9 @@ function renderProfilePage() {
   return `
     <!-- NPC Intro -->
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_THINKING.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_THINKING.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">職業說明 NPC — 小雲</div>
+        <div class="npc-name">職業說明 NPC — 小曦雲</div>
         在幫你打造專屬裝備之前，我需要先了解你的冒險能力！回答以下 ${KYCQuestions.length} 個問題，我就能判斷最適合你的職業分類 🛡️
       </div>
     </div>
@@ -111,9 +111,9 @@ function renderProfileResult() {
 
   return `
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">職業說明 NPC — 小雲</div>
+        <div class="npc-name">職業說明 NPC — 小曦雲</div>
         評估完成！根據你的回答，我已經判定你的冒險職業分類了 ✨
       </div>
     </div>

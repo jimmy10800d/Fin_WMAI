@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>薪守村 — BDD 前端測試</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+    h1 { color: #d4a843; margin-bottom: 20px; }
+    .test-suite { margin-bottom: 24px; }
+    .suite-title { font-size: 1rem; font-weight: 700; color: #4a90d9; margin-bottom: 8px; padding: 8px 12px; background: rgba(74,144,217,0.1); border-radius: 6px; }
+    .test-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 0.85rem; }
+    .test-item.pass { color: #4a7c59; }
+    .test-item.fail { color: #c0392b; }
+    .test-item.pending { color: #7f8c8d; }
+    .status { font-size: 1rem; }
+    .summary { margin-top: 20px; padding: 16px; background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.3); border-radius: 8px; font-size: 1rem; }
+    .summary.all-pass { border-color: #4a7c59; background: rgba(74,124,89,0.1); }
+    .summary.has-fail { border-color: #c0392b; background: rgba(192,57,43,0.1); }
+    button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+    .btn-run { background: #d4a843; color: #1a1a2e; margin-bottom: 16px; }
+    .btn-run:hover { background: #c5993d; }
+    #logArea { margin-top: 16px; padding: 12px; background: #0d0d1a; border-radius: 6px; font-family: monospace; font-size: 0.78rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; color: #aaa; }
+  </style>
+</head>
+<body>
+  <h1>🧪 薪守村 BDD 前端測試</h1>
+  <button class="btn-run" onclick="runBDDTests()">▶ 執行全部測試</button>
+  <div id="testResults"></div>
+  <div id="summary"></div>
+  <div id="logArea"></div>
+
+  <script>
+    let totalPass = 0, totalFail = 0;
+    const container = document.getElementById('testResults');
+    const summaryEl = document.getElementById('summary');
+    const logArea = document.getElementById('logArea');
+
+    function log(msg) { logArea.textContent += msg + '\n'; logArea.scrollTop = logArea.scrollHeight; }
+
+    function suite(name) {
+      const div = document.createElement('div');
+      div.className = 'test-suite';
+      div.innerHTML = `<div class="suite-title">${name}</div>`;
+      container.appendChild(div);
+      return div;
+    }
+
+    function test(suiteDiv, name, fn) {
+      const item = document.createElement('div');
+      item.className = 'test-item pending';
+      item.innerHTML = `<span class="status">⏳</span> ${name}`;
+      suiteDiv.appendChild(item);
+      try {
+        const result = fn();
+        if (result === true) {
+          item.className = 'test-item pass';
+          item.innerHTML = `<span class="status">✅</span> ${name}`;
+          totalPass++;
+        } else {
+          item.className = 'test-item fail';
+          item.innerHTML = `<span class="status">❌</span> ${name} — ${result || 'FAIL'}`;
+          totalFail++;
+          log(`FAIL: ${name} — ${result}`);
+        }
+      } catch (e) {
+        item.className = 'test-item fail';
+        item.innerHTML = `<span class="status">❌</span> ${name} — Error: ${e.message}`;
+        totalFail++;
+        log(`ERROR: ${name} — ${e.message}`);
+      }
+    }
+
+    function updateSummary() {
+      const total = totalPass + totalFail;
+      const allPass = totalFail === 0;
+      summaryEl.className = `summary ${allPass ? 'all-pass' : 'has-fail'}`;
+      summaryEl.innerHTML = allPass
+        ? `✅ 全部 ${total} 項測試通過！`
+        : `⚠️ ${totalPass} 通過 / ${totalFail} 失敗 / 共 ${total} 項`;
+    }
+
+    function runBDDTests() {
+      totalPass = 0; totalFail = 0;
+      container.innerHTML = ''; summaryEl.innerHTML = ''; logArea.textContent = '';
+      log('🧪 BDD 前端測試開始...\n');
+
+      // --- Feature A: 目標設定 ---
+      const sA = suite('Feature A: 初心者目標設定');
+      test(sA, 'GoalTypes 應有 8 種目標類型', () => {
+        return typeof GoalTypes !== 'undefined' && GoalTypes.length === 8 ? true : `found ${typeof GoalTypes !== 'undefined' ? GoalTypes.length : 0}`;
+      });
+      test(sA, 'renderGoalsPage 應為函式', () => typeof renderGoalsPage === 'function' ? true : 'not a function');
+      test(sA, 'isFuzzyInput 應偵測「不知道」為模糊', () => {
+        if (typeof isFuzzyInput !== 'function') return 'isFuzzyInput not defined';
+        return isFuzzyInput({ type: 'custom', amount: 100, years: 5, monthly: 5000, description: '不知道' }) === true ? true : 'not detected';
+      });
+      test(sA, 'isFuzzyInput 應通過正常輸入', () => {
+        if (typeof isFuzzyInput !== 'function') return 'isFuzzyInput not defined';
+        return isFuzzyInput({ type: 'retirement', amount: 5000000, years: 25, monthly: 15000, description: '60歲退休' }) === false ? true : 'false positive';
+      });
+
+      // --- Feature B: KYC/Profile ---
+      const sB = suite('Feature B: 職業說明 NPC（KYC）');
+      test(sB, 'renderProfilePage 應為函式', () => typeof renderProfilePage === 'function' ? true : 'not a function');
+      test(sB, 'API.submitKYC 應為函式', () => typeof API?.submitKYC === 'function' ? true : 'not a function');
+
+      // --- Feature C-E: Recommendation ---
+      const sCE = suite('Feature C-E: 專屬特殊技能（方案推薦）');
+      test(sCE, 'ExplainStrategies 應有 4 種說明模式', () => {
+        return typeof ExplainStrategies !== 'undefined' && Object.keys(ExplainStrategies).length === 4 ? true : `found ${typeof ExplainStrategies !== 'undefined' ? Object.keys(ExplainStrategies).length : 0}`;
+      });
+      test(sCE, 'renderRecommendationPage 應為函式', () => typeof renderRecommendationPage === 'function' ? true : 'not a function');
+      test(sCE, 'switchExplainStrategy 應為函式', () => typeof switchExplainStrategy === 'function' ? true : 'not a function');
+      test(sCE, 'recState 應追蹤 explainRetryCount', () => {
+        return typeof recState !== 'undefined' && 'explainRetryCount' in recState ? true : 'explainRetryCount not found';
+      });
+
+      // --- Feature F-G: Execution ---
+      const sFG = suite('Feature F-G: 攻克據點（一鍵下單）');
+      test(sFG, 'renderExecutionPage 應為函式', () => typeof renderExecutionPage === 'function' ? true : 'not a function');
+      test(sFG, 'API.pretradeCheck 應為函式', () => typeof API?.pretradeCheck === 'function' ? true : 'not a function');
+      test(sFG, 'API.submitOrder 應為函式', () => typeof API?.submitOrder === 'function' ? true : 'not a function');
+
+      // --- Feature I: Trust Thermometer ---
+      const sI = suite('Feature I: 信任溫度計');
+      test(sI, 'setTrust 應為函式', () => typeof setTrust === 'function' ? true : 'not a function');
+
+      // --- Feature J-M: Allies ---
+      const sJM = suite('Feature J-M: 盟友系統');
+      test(sJM, 'renderAlliesPage 應為函式', () => typeof renderAlliesPage === 'function' ? true : 'not a function');
+      test(sJM, 'switchAlliesTab 應為函式', () => typeof switchAlliesTab === 'function' ? true : 'not a function');
+      test(sJM, 'generateInvite 應為函式', () => typeof generateInvite === 'function' ? true : 'not a function');
+      test(sJM, 'sendEncourage 應為函式', () => typeof sendEncourage === 'function' ? true : 'not a function');
+      test(sJM, 'createChallenge 應為函式', () => typeof createChallenge === 'function' ? true : 'not a function');
+
+      // --- Feature N: Share ---
+      const sN = suite('Feature N: 冒險日誌分享');
+      test(sN, 'renderSharePage 應為函式', () => typeof renderSharePage === 'function' ? true : 'not a function');
+      test(sN, 'renderShareToAllySection 應為函式', () => typeof renderShareToAllySection === 'function' ? true : 'not a function');
+
+      // --- Feature O: Rank/Star System ---
+      const sO = suite('Feature O: 主角等級系統');
+      test(sO, 'RANK_NAMES 應有 6 個階級', () => {
+        return typeof RANK_NAMES !== 'undefined' && Object.keys(RANK_NAMES).length === 6 ? true : `found ${typeof RANK_NAMES !== 'undefined' ? Object.keys(RANK_NAMES).length : 0}`;
+      });
+      test(sO, 'RANK_XP_PER_STAR 應有 6 個階級定義', () => {
+        return typeof RANK_XP_PER_STAR !== 'undefined' && Object.keys(RANK_XP_PER_STAR).length === 6 ? true : 'missing';
+      });
+      test(sO, 'AppState 應有 rank 和 stars 屬性', () => {
+        return typeof AppState !== 'undefined' && 'rank' in AppState && 'stars' in AppState ? true : 'missing';
+      });
+      test(sO, 'checkXPLimit 應為函式', () => typeof checkXPLimit === 'function' ? true : 'not a function');
+      test(sO, 'XP_TABLE 應有至少 15 種事件', () => {
+        return typeof XP_TABLE !== 'undefined' && Object.keys(XP_TABLE).length >= 15 ? true : `found ${typeof XP_TABLE !== 'undefined' ? Object.keys(XP_TABLE).length : 0}`;
+      });
+      test(sO, 'addXP 應為函式', () => typeof addXP === 'function' ? true : 'not a function');
+
+      // --- Feature P: Unlock Map ---
+      const sP = suite('Feature P: 功能解鎖');
+      test(sP, 'UNLOCK_MAP 應定義 R2-R6 解鎖內容', () => {
+        if (typeof UNLOCK_MAP === 'undefined') return 'UNLOCK_MAP not defined';
+        const keys = Object.keys(UNLOCK_MAP).map(Number);
+        return keys.includes(2) && keys.includes(3) && keys.includes(6) ? true : `keys: ${keys}`;
+      });
+      test(sP, 'R3 應解鎖盟友系統', () => {
+        if (typeof UNLOCK_MAP === 'undefined') return 'UNLOCK_MAP not defined';
+        const r3 = UNLOCK_MAP[3] || [];
+        return r3.some(u => u.feature === 'allies_full') ? true : 'allies_full not in R3';
+      });
+
+      // --- Core Engine ---
+      const sCore = suite('Core: 遊戲引擎');
+      test(sCore, 'navigateTo 應為函式', () => typeof navigateTo === 'function' ? true : 'not a function');
+      test(sCore, 'logEvent 應為函式', () => typeof logEvent === 'function' ? true : 'not a function');
+      test(sCore, 'logEventRaw 應為函式', () => typeof logEventRaw === 'function' ? true : 'not a function');
+      test(sCore, 'showToast 應為函式', () => typeof showToast === 'function' ? true : 'not a function');
+      test(sCore, 'unlockQuest 應為函式', () => typeof unlockQuest === 'function' ? true : 'not a function');
+      test(sCore, 'completeQuest 應為函式', () => typeof completeQuest === 'function' ? true : 'not a function');
+      test(sCore, 'Demo.runSmokeTest 應為函式', () => typeof Demo?.runSmokeTest === 'function' ? true : 'not a function');
+      test(sCore, 'AppState.questStatus 應包含 allies', () => {
+        return typeof AppState !== 'undefined' && 'allies' in AppState.questStatus ? true : 'allies not in questStatus';
+      });
+
+      // --- Demo Helper ---
+      const sDemo = suite('Demo: 測試輔助');
+      test(sDemo, 'Demo.quickSetup 應為函式', () => typeof Demo?.quickSetup === 'function' ? true : 'not a function');
+      test(sDemo, 'Demo.reset 應為函式', () => typeof Demo?.reset === 'function' ? true : 'not a function');
+
+      updateSummary();
+      log(`\n結果：${totalPass} 通過 / ${totalFail} 失敗`);
+    }
+  </script>
+
+  <!-- Load all app scripts to test -->
+  <script>
+    // Mock sessionStorage for testing
+    sessionStorage.setItem('isLoggedIn', 'true');
+    sessionStorage.setItem('currentUser', JSON.stringify({ name: '測試者', level: 1 }));
+  </script>
+  <script src="../js/data-service.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/pages/home.js"></script>
+  <script src="../js/pages/goals.js"></script>
+  <script src="../js/pages/profile.js"></script>
+  <script src="../js/pages/recommendation.js"></script>
+  <script src="../js/pages/execution.js"></script>
+  <script src="../js/pages/dashboard.js"></script>
+  <script src="../js/pages/share.js"></script>
+  <script src="../js/pages/allies.js"></script>
+  <script src="../js/demo.js"></script>
+</body>
+</html>

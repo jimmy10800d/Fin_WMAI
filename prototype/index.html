@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
 <body>
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay">
-    <img src="IP_ICON/IP_HELLO.png" alt="小雲" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--color-gold);">
+    <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" style="width:80px;height:80px;border-radius:50%;border:3px solid var(--color-gold);">
     <div class="village-title">薪 守 村</div>
     <div class="loading-text">正在進入村莊...</div>
     <div class="loading-spinner"></div>
@@ -39,9 +39,10 @@
           <span class="xp-bar-text" id="xpBarText">0 / 100 XP</span>
         </div>
         <div class="player-level">
-          <span class="level-badge" id="levelBadge">Lv.1</span>
+          <span class="level-badge" id="levelBadge">R1</span>
           <span id="playerTitle">初心者</span>
         </div>
+        <div class="player-stars" id="playerStars">★☆☆☆☆</div>
       </div>
 
       <!-- Quest Navigation -->
@@ -93,6 +94,12 @@
           <span class="nav-label">冒險日誌分享</span>
           <span class="quest-status locked"></span>
         </div>
+
+        <div class="nav-item" data-page="allies" onclick="navigateTo('allies')">
+          <div class="nav-icon">🤝</div>
+          <span class="nav-label">盟友中心</span>
+          <span class="quest-status locked"></span>
+        </div>
       </nav>
 
       <!-- Sidebar Footer -->
@@ -127,7 +134,7 @@
             <i class="fas fa-bell"></i>
             <span class="badge" id="notifBadge">3</span>
           </button>
-          <button class="header-btn" onclick="toggleChatbot()" title="呼叫小雲 NPC">
+          <button class="header-btn" onclick="toggleChatbot()" title="呼叫小曦雲 NPC">
             <i class="fas fa-comment-dots"></i>
           </button>
         </div>
@@ -149,9 +156,9 @@
       </div>
       <div id="riskModalBody">
         <div class="npc-dialog">
-          <img src="IP_ICON/IP_THINKING.png" alt="小雲" class="npc-avatar">
+          <img src="IP_ICON/IP_THINKING.png" alt="小曦雲" class="npc-avatar">
           <div class="npc-bubble">
-            <div class="npc-name">NPC 小雲 — 風險提醒</div>
+            <div class="npc-name">NPC 小曦雲 — 風險提醒</div>
             <p>冒險者，在你繼續之前，有些重要的事情必須先了解：</p>
           </div>
         </div>
@@ -216,14 +223,14 @@
 
   <!-- Chatbot Panel -->
   <button class="chatbot-toggle" id="chatbotToggle" onclick="toggleChatbot()">
-    <img src="IP_ICON/IP_HELLO.png" alt="小雲">
+    <img src="IP_ICON/IP_HELLO.png" alt="小曦雲">
   </button>
 
   <div class="chatbot-panel" id="chatbotPanel">
     <div class="chatbot-header">
       <div class="npc-info">
-        <img src="IP_ICON/IP_HELLO.png" alt="小雲">
-        <span>NPC 小雲</span>
+        <img src="IP_ICON/IP_HELLO.png" alt="小曦雲">
+        <span>NPC 小曦雲</span>
       </div>
       <button class="close-chat" onclick="toggleChatbot()">
         <i class="fas fa-times"></i>
@@ -231,15 +238,15 @@
     </div>
     <div class="chatbot-messages" id="chatMessages">
       <div class="npc-dialog">
-        <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar" style="width:32px;height:32px;">
+        <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar" style="width:32px;height:32px;">
         <div class="npc-bubble">
-          <div class="npc-name">小雲</div>
-          嗨～我是你的專屬 NPC 嚮導小雲！有任何關於理財冒險的問題都可以問我喔 ✨
+          <div class="npc-name">小曦雲</div>
+          嗨～我是你的專屬 NPC 嚮導小曦雲！有任何關於理財冒險的問題都可以問我喔 ✨
         </div>
       </div>
     </div>
     <div class="chatbot-input-area">
-      <input type="text" id="chatInput" placeholder="向小雲提問..." onkeydown="if(event.key==='Enter')sendChat()">
+      <input type="text" id="chatInput" placeholder="向小曦雲提問..." onkeydown="if(event.key==='Enter')sendChat()">
       <button onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
@@ -254,6 +261,7 @@
   <script src="js/pages/execution.js"></script>
   <script src="js/pages/dashboard.js"></script>
   <script src="js/pages/share.js"></script>
+  <script src="js/pages/allies.js"></script>
   <script src="js/chatbot.js"></script>
   <script src="js/demo.js"></script>
 </body>

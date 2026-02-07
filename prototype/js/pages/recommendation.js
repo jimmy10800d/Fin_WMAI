@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    【專屬特殊技能】客製化方案 — Features C/D/E
    白話說明 + 聽不懂切換 + 投資商品池
    ================================================ */
@@ -24,7 +24,8 @@ const ExplainStrategies = {
 let recState = {
   loaded: false,
   currentStrategy: 'default',
-  trustScore: null
+  trustScore: null,
+  explainRetryCount: 0
 };
 
 function renderRecommendationPage() {
@@ -37,9 +38,9 @@ function renderRecommendationPage() {
 function renderRecLoading() {
   return `
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_THINKING.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_THINKING.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">NPC 小雲 — 技能鍛造中</div>
+        <div class="npc-name">NPC 小曦雲 — 技能鍛造中</div>
         正在為你從投資商品池中挑選最適合的專屬技能組合，請稍等... ⚔️
       </div>
     </div>
@@ -65,9 +66,9 @@ function renderRecResult() {
 
   return `
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">NPC 小雲 — 你的專屬特殊技能</div>
+        <div class="npc-name">NPC 小曦雲 — 你的專屬特殊技能</div>
         根據你的冒險能力（${AppState.profile.riskLabel || '穩健型'}）和人生目標，我從投資商品池中為你打造了這套專屬技能組合！
       </div>
     </div>
@@ -196,12 +197,61 @@ let strategyIndex = 0;
 const strategyKeys = Object.keys(ExplainStrategies);
 
 function switchExplainStrategy() {
+  recState.explainRetryCount++;
   strategyIndex = (strategyIndex + 1) % strategyKeys.length;
   recState.currentStrategy = strategyKeys[strategyIndex];
-  logEvent('explainability_retry_clicked', { strategy: recState.currentStrategy });
+  logEvent('explainability_retry_clicked', { strategy: recState.currentStrategy, count: recState.explainRetryCount });
   logEvent('translation_failure_logged', { strategy: recState.currentStrategy });
+
+  // Feature E: Second consecutive "聽不懂" → escalate to human advisor
+  if (recState.explainRetryCount >= 2) {
+    logEvent('explainability_escalated', { retryCount: recState.explainRetryCount });
+    showEscalationBanner();
+    return;
+  }
+
   navigateTo('recommendation');
   showToast(`已切換說明模式：${ExplainStrategies[recState.currentStrategy].name}`, 'info');
+}
+
+/** Feature E: Show escalation to human advisor banner */
+function showEscalationBanner() {
+  const explainArea = document.querySelector('.explain-area');
+  if (!explainArea) {
+    navigateTo('recommendation');
+    setTimeout(showEscalationBanner, 100);
+    return;
+  }
+
+  const banner = document.createElement('div');
+  banner.className = 'escalation-banner';
+  banner.innerHTML = `
+    <div class="esc-icon">👩‍💼</div>
+    <h4>想跟真人理財顧問聊聊嗎？</h4>
+    <p>你已經切換了 ${recState.explainRetryCount} 次說明方式，看起來可能需要更深入的解釋。<br>我們可以幫你安排一位理專來協助說明。</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-primary" onclick="requestHumanAdvisor()">
+        <i class="fas fa-headset"></i> 預約理專諮詢
+      </button>
+      <button class="btn btn-outline" onclick="dismissEscalation()">
+        我再看看
+      </button>
+    </div>
+  `;
+  explainArea.appendChild(banner);
+  showToast('💡 建議轉介真人理專為你說明', 'info', 4000);
+}
+
+function requestHumanAdvisor() {
+  logEvent('human_advisor_requested', { from: 'explainability_escalation' });
+  showToast('📞 已為你預約理財顧問諮詢，將於 1 個工作天內聯繫', 'success', 5000);
+}
+
+function dismissEscalation() {
+  const banner = document.querySelector('.escalation-banner');
+  if (banner) banner.remove();
+  recState.explainRetryCount = 0; // reset so they can try again
+  showToast('好的！你可以繼續切換說明方式', 'info');
 }
 
 function setTrust(score) {
@@ -212,6 +262,14 @@ function setTrust(score) {
   });
   const labels = ['', '壓力很大', '有點不安', '還好', '感覺不錯', '非常信任'];
   showToast(`信任回饋：${labels[score]}，感謝你的意見！`, 'success');
+
+  // Feature I: Low trust score triggers immediate adjustment suggestion
+  if (score <= 2) {
+    logEvent('feedback_action_triggered', { score, action: 'low_trust_adjustment' });
+    setTimeout(() => {
+      showToast('🔄 已收到你的壓力反饋，系統將自動調整說明方式並降低推薦積極度', 'warning', 5000);
+    }, 1000);
+  }
 }
 
 function proceedToExecution() {

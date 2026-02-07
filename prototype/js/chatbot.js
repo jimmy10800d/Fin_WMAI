@@ -1,5 +1,5 @@
-/* ================================================
-   【NPC 小雲】AI 聊天助手 — Chatbot Panel
+﻿/* ================================================
+   【NPC 小曦雲】AI 聊天助手 — Chatbot Panel
    支援 Ollama LLM + 本地 fallback
    ================================================ */
 
@@ -14,8 +14,8 @@ const Chatbot = {
   ollamaModel: 'llama3.1:8b',
   useOllama: true,  // true = 呼叫 Ollama；false = 本地 fallback
 
-  /* 系統提示詞 — 讓 LLM 扮演 NPC 小雲 */
-  systemPrompt: `你是「小雲」，薪守村（Fin_WMAI）裡的 NPC 理財冒險顧問。
+  /* 系統提示詞 — 讓 LLM 扮演 NPC 小曦雲 */
+  systemPrompt: `你是「小曦雲」，薪守村（Fin_WMAI）裡的 NPC 理財冒險顧問。
 角色設定：
 - 你是一位友善、專業的理財嚮導，說話風格活潑但不失專業
 - 你用 RPG 冒險隱喻來解說理財概念（例：目標設定=選擇冒險方向、KYC=冒險體檢、投資=攻克據點）
@@ -56,7 +56,7 @@ const Chatbot = {
     this.checkOllamaHealth();
 
     // Welcome message (不透過 Ollama)
-    this.addBotMessage('歡迎來到薪守村！✨ 我是 NPC 小雲，你的理財冒險顧問。有任何問題都可以問我喔！');
+    this.addBotMessage('歡迎來到薪守村！✨ 我是 NPC 小曦雲，你的理財冒險顧問。有任何問題都可以問我喔！');
     this.addBotMessage('💡 試著問我：\n• 我該從哪裡開始？\n• 什麼是 KYC？\n• 幫我分析投資策略');
   },
 
@@ -70,11 +70,11 @@ const Chatbot = {
       if (resp.ok) {
         const data = await resp.json();
         const models = (data.models || []).map(m => m.name);
-        console.log('[小雲] Ollama 連線成功，可用模型:', models);
+        console.log('[小曦雲] Ollama 連線成功，可用模型:', models);
         // 確認指定模型存在
         const hasModel = models.some(m => m.startsWith(this.ollamaModel));
         if (!hasModel) {
-          console.warn(`[小雲] 模型 ${this.ollamaModel} 未找到，可用: ${models.join(', ')}`);
+          console.warn(`[小曦雲] 模型 ${this.ollamaModel} 未找到，可用: ${models.join(', ')}`);
           this.addSystemNote(`⚠️ 模型 ${this.ollamaModel} 未就緒，使用本地模式`);
           this.useOllama = false;
         } else {
@@ -84,7 +84,7 @@ const Chatbot = {
         throw new Error('HTTP ' + resp.status);
       }
     } catch (e) {
-      console.warn('[小雲] Ollama 不可用，使用本地 fallback:', e.message);
+      console.warn('[小曦雲] Ollama 不可用，使用本地 fallback:', e.message);
       this.useOllama = false;
       this.addSystemNote('⚡ 本地模式（Ollama 未連線）');
     }
@@ -186,7 +186,7 @@ const Chatbot = {
       this.chatHistory.push({ role: 'assistant', content: fullReply });
 
     } catch (e) {
-      console.error('[小雲] Ollama 錯誤:', e);
+      console.error('[小曦雲] Ollama 錯誤:', e);
       this.hideTyping();
       // Fallback
       const reply = this.localFallbackReply(userText);
@@ -244,7 +244,7 @@ const Chatbot = {
 
     if (role === 'bot') {
       div.innerHTML = `
-        <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chat-avatar">
+        <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="chat-avatar">
         <div class="chat-bubble">${this.formatText(text)}</div>
       `;
     } else {
@@ -263,7 +263,7 @@ const Chatbot = {
     div.className = 'chat-msg chat-bot';
     div.id = id;
     div.innerHTML = `
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chat-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="chat-avatar">
       <div class="chat-bubble" id="${id}-text"></div>
     `;
     container.appendChild(div);
@@ -289,7 +289,7 @@ const Chatbot = {
     typing.className = 'chat-msg chat-bot chat-typing';
     typing.id = 'chatTyping';
     typing.innerHTML = `
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="chat-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="chat-avatar">
       <div class="chat-bubble">
         <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
       </div>

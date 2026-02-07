@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    村莊廣場 (Home Page) — 冒險總覽
    ================================================ */
 function renderHomePage() {
@@ -10,9 +10,9 @@ function renderHomePage() {
     <!-- Hero Welcome -->
     <div class="home-hero animate-fadeIn">
       <div class="npc-dialog" style="justify-content:center;margin-bottom:16px;">
-        <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar">
+        <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar-xl">
         <div class="npc-bubble">
-          <div class="npc-name">嚮導 小雲</div>
+          <div class="npc-name">嚮導 小曦雲</div>
           歡迎回到薪守村，<strong class="text-gold">${user.name || '冒險者'}</strong>！
           今天也要繼續守護你的薪水嗎？讓我們一起展開冒險吧 ✨
         </div>

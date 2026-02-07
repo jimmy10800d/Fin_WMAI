@@ -17,6 +17,8 @@ function adminNav(page) {
     users: { title: '冒險者管理', render: renderUsers },
     events: { title: '事件追蹤', render: renderEvents },
     scenarios: { title: '情境管理', render: renderScenarios },
+    allies: { title: '盟友系統管理', render: renderAlliesAdmin },
+    leveling: { title: '等級系統總覽', render: renderLevelingAdmin },
   };
 
   const p = pages[page];
@@ -722,4 +724,234 @@ function renderScenarios() {
       </table>
     </div>
   `;
+}
+
+/* ---- Allies Admin (盟友系統管理 — Features J/K/L/M) ---- */
+function renderAlliesAdmin() {
+  const allyPairs = [
+    { user1: 'U-0012 小美', user2: 'U-0034 阿明', since: '2026-02-05', visibility: 'L1', status: 'active' },
+    { user1: 'U-0012 小美', user2: 'U-0056 小花', since: '2026-02-08', visibility: 'L2', status: 'active' },
+    { user1: 'U-0078 大雄', user2: 'U-0091 阿文', since: '2026-02-01', visibility: 'L0', status: 'active' },
+    { user1: 'U-0034 阿明', user2: 'U-0123 小靜', since: '2026-02-10', visibility: 'L1', status: 'pending' },
+  ];
+
+  const challenges = [
+    { id: 'CH-001', name: '連續定投 30 天', creator: 'U-0012', members: 3, progress: 67, status: 'active' },
+    { id: 'CH-002', name: '月存 2 萬挑戰', creator: 'U-0078', members: 2, progress: 45, status: 'active' },
+    { id: 'CH-003', name: '學習理財 7 天', creator: 'U-0034', members: 5, progress: 100, status: 'completed' },
+  ];
+
+  const encourageStats = [
+    { type: '🎉 恭喜達標！', sent: 28, blocked: 0 },
+    { type: '💪 加油打氣', sent: 45, blocked: 2 },
+    { type: '🔥 連續紀錄', sent: 12, blocked: 0 },
+    { type: '✍️ 自訂訊息', sent: 67, blocked: 5 },
+  ];
+
+  return \`
+    <div class="a-stats">
+      <div class="a-stat">
+        <div class="a-stat-value">\${allyPairs.length}</div>
+        <div class="a-stat-label">盟友配對數</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value">\${challenges.length}</div>
+        <div class="a-stat-label">進行中挑戰</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value">\${encourageStats.reduce((s, e) => s + e.sent, 0)}</div>
+        <div class="a-stat-label">鼓勵訊息總數</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value" style="color:var(--admin-red)">\${encourageStats.reduce((s, e) => s + e.blocked, 0)}</div>
+        <div class="a-stat-label">違規攔截</div>
+      </div>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-handshake"></i> 盟友配對列表</h3>
+      <table class="a-table">
+        <thead><tr><th>冒險者 A</th><th>冒險者 B</th><th>建立日期</th><th>可見度</th><th>狀態</th><th>操作</th></tr></thead>
+        <tbody>
+          \${allyPairs.map(a => \`
+            <tr>
+              <td>\${a.user1}</td>
+              <td>\${a.user2}</td>
+              <td>\${a.since}</td>
+              <td><span class="a-tag a-tag-blue">\${a.visibility}</span></td>
+              <td><span class="a-tag \${a.status === 'active' ? 'a-tag-green' : 'a-tag-orange'}">\${a.status === 'active' ? '已生效' : '待確認'}</span></td>
+              <td><button class="a-btn a-btn-outline" style="font-size:.72rem;padding:3px 8px;">查看</button></td>
+            </tr>
+          \`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-trophy"></i> 共同挑戰管理</h3>
+      <table class="a-table">
+        <thead><tr><th>ID</th><th>挑戰名稱</th><th>發起人</th><th>成員</th><th>進度</th><th>狀態</th></tr></thead>
+        <tbody>
+          \${challenges.map(c => \`
+            <tr>
+              <td style="font-family:monospace;">\${c.id}</td>
+              <td style="font-weight:600;">\${c.name}</td>
+              <td>\${c.creator}</td>
+              <td>\${c.members} 人</td>
+              <td>
+                <div class="a-progress" style="width:100px;height:6px;display:inline-block;vertical-align:middle;">
+                  <div class="a-progress-fill" style="width:\${c.progress}%;background:\${c.progress >= 100 ? 'var(--admin-green)' : 'var(--admin-gold)'}"></div>
+                </div>
+                <span style="font-size:.78rem;margin-left:6px;">\${c.progress}%</span>
+              </td>
+              <td><span class="a-tag \${c.status === 'completed' ? 'a-tag-green' : 'a-tag-blue'}">\${c.status === 'completed' ? '已完成' : '進行中'}</span></td>
+            </tr>
+          \`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-comment-dots"></i> 鼓勵訊息統計（含合規攔截）</h3>
+      <table class="a-table">
+        <thead><tr><th>訊息類型</th><th>發送數</th><th>攔截數</th><th>攔截率</th></tr></thead>
+        <tbody>
+          \${encourageStats.map(e => \`
+            <tr>
+              <td style="font-weight:600;">\${e.type}</td>
+              <td>\${e.sent}</td>
+              <td style="color:\${e.blocked > 0 ? 'var(--admin-red)' : 'inherit'}">\${e.blocked}</td>
+              <td>\${e.sent > 0 ? ((e.blocked / e.sent) * 100).toFixed(1) : 0}%</td>
+            </tr>
+          \`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;font-size:.78rem;">
+        <i class="fas fa-shield-halved" style="color:var(--admin-red);margin-right:6px;"></i>
+        <strong>BANNED_WORDS 攔截：</strong>系統自動偵測「保證獲利、穩賺不賠、借錢投資」等違規用語，並阻擋發送。
+      </div>
+    </div>
+  \`;
+}
+
+/* ---- Leveling Admin (等級系統總覽 — Features O/P) ---- */
+function renderLevelingAdmin() {
+  const rankDistribution = [
+    { rank: 1, name: '啟程者', count: 520, pct: 41.7 },
+    { rank: 2, name: '受訓者', count: 380, pct: 30.5 },
+    { rank: 3, name: '紀律者', count: 210, pct: 16.8 },
+    { rank: 4, name: '自控者', count: 85, pct: 6.8 },
+    { rank: 5, name: '戰術者', count: 40, pct: 3.2 },
+    { rank: 6, name: '夥伴型玩家', count: 12, pct: 1.0 },
+  ];
+
+  const xpEvents = [
+    { event: 'goal_captured', xp: 50, today: 45, total: 1280 },
+    { event: 'kyc_completed', xp: 80, today: 38, total: 950 },
+    { event: 'order_submitted', xp: 100, today: 22, total: 680 },
+    { event: 'share_card_generated', xp: 40, today: 18, total: 420 },
+    { event: 'challenge_completed', xp: 40, today: 5, total: 89 },
+    { event: 'encourage_received', xp: 10, today: 32, total: 560 },
+    { event: 'trust_thermometer_submitted', xp: 15, today: 28, total: 390 },
+  ];
+
+  const unlockStats = [
+    { rank: 2, feature: '聽不懂改寫', unlocked: 380, icon: '💬' },
+    { rank: 3, feature: '盟友系統 + 挑戰', unlocked: 210, icon: '🤝' },
+    { rank: 4, feature: '再平衡視覺化', unlocked: 85, icon: '📊' },
+    { rank: 5, feature: '再平衡決策回顧', unlocked: 40, icon: '🔍' },
+    { rank: 6, feature: '長期趨勢報告', unlocked: 12, icon: '📈' },
+  ];
+
+  return \`
+    <div class="a-stats">
+      <div class="a-stat">
+        <div class="a-stat-value">1,247</div>
+        <div class="a-stat-label">總冒險者數</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value" style="color:var(--admin-gold)">R2.3</div>
+        <div class="a-stat-label">平均階級</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value">156,800</div>
+        <div class="a-stat-label">今日 XP 總發放</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value" style="color:var(--admin-red)">342</div>
+        <div class="a-stat-label">今日 XP 限額觸發</div>
+      </div>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-chart-bar"></i> 階級分布 (6 Ranks × 5 Stars)</h3>
+      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+        \${rankDistribution.map(r => \`
+          <div style="flex:1;min-width:120px;text-align:center;padding:16px;border:1px solid var(--admin-border);border-radius:8px;">
+            <div style="font-size:1.5rem;margin-bottom:4px;">\${'⭐'.repeat(Math.min(r.rank, 3))}</div>
+            <div style="font-size:.78rem;color:var(--admin-muted);">R\${r.rank}</div>
+            <div style="font-size:1rem;font-weight:700;">\${r.name}</div>
+            <div style="font-size:1.3rem;font-weight:800;color:var(--admin-gold);margin-top:4px;">\${r.count}</div>
+            <div style="font-size:.72rem;color:var(--admin-muted);">\${r.pct}%</div>
+            <div class="a-progress" style="height:6px;margin-top:8px;">
+              <div class="a-progress-fill" style="width:\${r.pct}%;background:var(--admin-gold);"></div>
+            </div>
+          </div>
+        \`).join('')}
+      </div>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-bolt"></i> XP 事件統計</h3>
+      <table class="a-table">
+        <thead><tr><th>事件名稱</th><th>單次 XP</th><th>今日觸發</th><th>累計觸發</th><th>今日 XP 貢獻</th></tr></thead>
+        <tbody>
+          \${xpEvents.map(e => \`
+            <tr>
+              <td style="font-family:monospace;font-size:.78rem;">\${e.event}</td>
+              <td style="color:var(--admin-gold);font-weight:600;">+\${e.xp}</td>
+              <td>\${e.today}</td>
+              <td>\${e.total.toLocaleString()}</td>
+              <td style="font-weight:600;">\${(e.today * e.xp).toLocaleString()}</td>
+            </tr>
+          \`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-lock-open"></i> 功能解鎖統計</h3>
+      <table class="a-table">
+        <thead><tr><th>解鎖階級</th><th>功能</th><th>已解鎖人數</th><th>佔比</th></tr></thead>
+        <tbody>
+          \${unlockStats.map(u => \`
+            <tr>
+              <td><span class="a-tag a-tag-gold">R\${u.rank}</span></td>
+              <td>\${u.icon} \${u.feature}</td>
+              <td style="font-weight:600;">\${u.unlocked}</td>
+              <td>\${(u.unlocked / 1247 * 100).toFixed(1)}%</td>
+            </tr>
+          \`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="a-card" style="border-left:4px solid var(--admin-orange);">
+      <h3><i class="fas fa-shield-halved"></i> Anti-Spam XP 限額設定</h3>
+      <p style="font-size:.82rem;color:var(--admin-muted);margin:8px 0;">
+        防止用戶刷 XP 行為。以下事件有每日/每週觸發上限：
+      </p>
+      <table class="a-table">
+        <thead><tr><th>事件</th><th>每日上限</th><th>每週上限</th><th>今日觸發限額次數</th></tr></thead>
+        <tbody>
+          <tr><td>trust_thermometer_submitted</td><td>2 次</td><td>無限制</td><td style="color:var(--admin-red);">84</td></tr>
+          <tr><td>risk_disclosure_acknowledged</td><td>3 次</td><td>無限制</td><td>12</td></tr>
+          <tr><td>encourage_received</td><td>2 次</td><td>無限制</td><td style="color:var(--admin-red);">156</td></tr>
+          <tr><td>challenge_completed</td><td>1 次</td><td>無限制</td><td>45</td></tr>
+          <tr><td>quest_weekly_completed</td><td>無限制</td><td>1 次</td><td>28</td></tr>
+          <tr><td>re_explain_feedback_submitted</td><td>3 次</td><td>無限制</td><td>17</td></tr>
+        </tbody>
+      </table>
+    </div>
+  \`;
 }

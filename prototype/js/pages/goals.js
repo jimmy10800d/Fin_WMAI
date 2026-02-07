@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    【初心者】目標設定 — Feature A
    ================================================ */
 const GoalTypes = [
@@ -18,9 +18,9 @@ function renderGoalsPage() {
   return `
     <!-- NPC Intro -->
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">嚮導 小雲</div>
+        <div class="npc-name">嚮導 小曦雲</div>
         冒險者，每段偉大的旅程都從一個目標開始！告訴我，你心中最想達成的人生目標是什麼呢？🌟
       </div>
     </div>
@@ -133,6 +133,8 @@ function renderGoalsPage() {
             <i class="fas fa-arrow-right"></i> 確認目標
           </button>
         </div>
+        <!-- Fuzzy Warning Area (Feature A) -->
+        <div id="goalFuzzyWarning" class="hidden"></div>
       </div>
     </div>
 
@@ -235,6 +237,13 @@ async function processGoalSubmit() {
     monthly: parseFloat(document.getElementById('goalMonthly')?.value),
     description: document.getElementById('goalDesc')?.value || ''
   };
+
+  // --- Feature A: Fuzzy input detection ---
+  if (isFuzzyInput(goalData)) {
+    showFuzzyWarning(goalData);
+    return;
+  }
+
   await API.createGoal(goalData);
   await API.semanticTransform(goalData.description);
   // Show result
@@ -245,6 +254,74 @@ async function processGoalSubmit() {
   completeQuest('goals');
   unlockQuest('profile');
   showToast('🎉 初心者任務完成！下一站：職業說明 NPC', 'achievement', 4000);
+}
+
+/** Feature A — detect vague / fuzzy goal input */
+function isFuzzyInput(goalData) {
+  // Fuzzy patterns: too vague descriptions, unrealistic amounts
+  const amount = goalData.amount;
+  const years = goalData.years;
+  const monthly = goalData.monthly;
+  const desc = (goalData.description || '').trim();
+
+  // Vague keywords
+  const vaguePatterns = ['不知道', '隨便', '都可以', '不確定', '再看看', 'idk', '...'];
+  const isVagueDesc = vaguePatterns.some(p => desc.toLowerCase().includes(p));
+
+  // Unrealistic: amount 0 or description is empty when custom goal
+  const isEmptyCustom = goalData.type === 'custom' && desc.length < 3;
+
+  // Amount is NaN or 0
+  const isInvalidAmount = isNaN(amount) || amount <= 0;
+
+  // Monthly investment > amount (payoff in < 1 month?)
+  const isOverMonthly = monthly * 12 * years > amount * 5;
+
+  goalsState.fuzzyReason = isVagueDesc ? 'vague' : isEmptyCustom ? 'empty_custom' : isInvalidAmount ? 'invalid_amount' : null;
+
+  return isVagueDesc || isEmptyCustom || isInvalidAmount;
+}
+
+/** Show guided re-input UI for fuzzy input */
+function showFuzzyWarning(goalData) {
+  logEvent('semantic_transform_failed', { reason: goalsState.fuzzyReason, rawInput: goalData.description });
+  goalsState.step = 2;
+
+  const warningEl = document.getElementById('goalFuzzyWarning');
+  if (warningEl) {
+    warningEl.innerHTML = `
+      <div class="fuzzy-warning animate-fadeIn">
+        <p>
+          <span class="warning-icon">⚠️</span>
+          <strong>小曦雲提醒：</strong>你的目標描述有點模糊，讓我幫你更具體一些吧！
+        </p>
+        <p style="margin-top:8px;">試試看這些範例：</p>
+        <div class="fuzzy-examples">
+          <button class="fuzzy-example-btn" onclick="fillFuzzyExample('10年後在新北買一間30坪的房子')">🏠 10年買房30坪</button>
+          <button class="fuzzy-example-btn" onclick="fillFuzzyExample('60歲退休後每月有3萬元生活費')">🏖️ 60歲退休月領3萬</button>
+          <button class="fuzzy-example-btn" onclick="fillFuzzyExample('3年內存到100萬出國留學')">🎓 3年存100萬留學</button>
+          <button class="fuzzy-example-btn" onclick="fillFuzzyExample('5年存50萬當寵物醫療基金')">🐾 5年存50萬毛孩基金</button>
+        </div>
+      </div>
+    `;
+    warningEl.classList.remove('hidden');
+  }
+
+  showToast('目標描述有點模糊，請參考範例重新填寫 🔄', 'warning', 4000);
+  navigateTo('goals');
+  goGoalStep(2);
+}
+
+/** Fill a fuzzy example into the description field */
+function fillFuzzyExample(text) {
+  const descInput = document.getElementById('goalDesc');
+  if (descInput) {
+    descInput.value = text;
+    descInput.focus();
+  }
+  const warningEl = document.getElementById('goalFuzzyWarning');
+  if (warningEl) warningEl.classList.add('hidden');
+  showToast('已填入範例，你可以再修改後送出 ✏️', 'info');
 }
 
 function submitScenario() {

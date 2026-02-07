@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    薪守村 Login JS — RPG 入村流程
    ================================================ */
 const MockUsers = {
@@ -174,7 +174,7 @@ const LoginFlow = {
     document.getElementById('statTitle').textContent = user.title;
     // Loading bar animation
     const bar = document.getElementById('loadingBarFill');
-    const hints = ['正在準備冒險裝備...', '載入村莊地圖...', '召喚 NPC 小雲...', '即將進入薪守村！'];
+    const hints = ['正在準備冒險裝備...', '載入村莊地圖...', '召喚 NPC 小曦雲...', '即將進入薪守村！'];
     const hint = document.getElementById('loadingHint');
     let progress = 0;
     const interval = setInterval(() => {

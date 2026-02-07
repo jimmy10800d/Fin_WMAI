@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    【攻克據點】一鍵下單 + Pre-trade Check — Feature F
    ================================================ */
 let execState = { phase: 'review', checking: false, result: null };
@@ -17,9 +17,9 @@ function renderExecReview() {
 
   return `
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">小雲 — 戰鬥指揮官</div>
+        <div class="npc-name">小曦雲 — 戰鬥指揮官</div>
         冒險者，以下是你的行動清單。確認沒問題後就可以「一鍵出擊」，我會自動完成所有風控檢查！🏰
       </div>
     </div>

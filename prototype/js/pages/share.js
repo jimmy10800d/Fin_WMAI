@@ -1,13 +1,13 @@
-/* ================================================
+﻿/* ================================================
    【冒險日誌】成就分享 — Feature H (share) + Privacy
    ================================================ */
 
 function renderSharePage() {
   return `
     <div class="npc-dialog animate-fadeIn">
-      <img src="IP_ICON/IP_HELLO.png" alt="小雲" class="npc-avatar">
+      <img src="IP_ICON/IP_HELLO.png" alt="小曦雲" class="npc-avatar">
       <div class="npc-bubble">
-        <div class="npc-name">小雲 — 日誌官</div>
+        <div class="npc-name">小曦雲 — 日誌官</div>
         冒險者，你的戰績很棒！選擇想分享的成就，系統會自動隱藏敏感資訊，安心分享你的冒險故事吧～ 📖
       </div>
     </div>
@@ -73,6 +73,9 @@ function renderSharePage() {
         </button>
       </div>
     </div>
+
+    <!-- Feature N: Share-to-Ally -->
+    ${renderShareToAllySection()}
   `;
 }
 
@@ -90,7 +93,7 @@ function getShareableAchievements() {
     { icon: '📊', text: '取得客製化方案' },
     { icon: '⚔️', text: '一鍵下單成功' },
     { icon: '🏆', text: '首月定期定額達成' },
-    { icon: '💎', text: `Lv.${AppState.level} 冒險者` },
+    { icon: '💎', text: `R${AppState.rank} ${RANK_NAMES[AppState.rank] || '冒險者'}` },
   ];
   return achievements;
 }
@@ -130,8 +133,8 @@ function renderShareCard() {
       </div>
       <div class="share-card-stats">
         <div class="share-stat">
-          <div class="share-stat-value">Lv.${AppState.level}</div>
-          <div class="share-stat-label">等級</div>
+          <div class="share-stat-value">R${AppState.rank}</div>
+          <div class="share-stat-label">階級</div>
         </div>
         <div class="share-stat">
           <div class="share-stat-value">${Object.values(AppState.questStatus).filter(s => s === 'completed').length}</div>
@@ -181,4 +184,91 @@ function shareToChannel(channel) {
   };
   showToast(messages[channel] || '分享成功', 'success');
   logEvent('share_card_generated');
+}
+
+/** Feature N: Share-to-Ally section */
+function renderShareToAllySection() {
+  // Check if allies system is unlocked (R3+)
+  if (AppState.rank < 3 || AppState.questStatus.allies === 'locked') {
+    return `
+      <div class="card mb-3 animate-fadeIn" style="opacity:0.6;">
+        <h3 style="margin-bottom:8px;">🤝 分享給盟友</h3>
+        <p style="font-size:0.82rem;color:var(--text-muted);">
+          <i class="fas fa-lock"></i> 升到 R3 後解鎖盟友分享功能
+        </p>
+      </div>
+    `;
+  }
+
+  // Mock allies list
+  const allies = [
+    { id: 'a1', name: '小美', emoji: '👩' },
+    { id: 'a2', name: '阿明', emoji: '👨' },
+    { id: 'a3', name: '小花', emoji: '🧑' }
+  ];
+
+  return `
+    <div class="card mb-3 animate-fadeIn share-ally-section">
+      <h4><i class="fas fa-handshake"></i> 分享給盟友</h4>
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px;">
+        選擇要分享成就卡片的盟友，他們會收到你的冒險日誌（不含個人資訊）
+      </p>
+      <div class="ally-checkbox-list">
+        ${allies.map(a => `
+          <label>
+            <input type="checkbox" value="${a.id}" class="share-ally-check">
+            <span>${a.emoji}</span>
+            <span>${a.name}</span>
+          </label>
+        `).join('')}
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-gold btn-sm" onclick="shareToAllies()">
+          <i class="fas fa-paper-plane"></i> 發送給盟友
+        </button>
+      </div>
+      <div class="compliance-note">
+        <i class="fas fa-info-circle"></i>
+        分享卡片已自動去除個人身份與帳戶資訊，盟友僅能看到成就勳章與百分比。
+      </div>
+    </div>
+
+    <!-- Invite via Share Card -->
+    <div class="card mb-3 animate-fadeIn">
+      <h3 style="margin-bottom:8px;">📨 分享卡片邀請新盟友</h3>
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px;">
+        你的分享卡片附帶專屬邀請碼，朋友掃描即可加入你的盟友圈
+      </p>
+      <div class="invite-link-box">
+        <input type="text" value="https://finwmai.tw/invite/${Date.now().toString(36)}" readonly id="shareInviteLink">
+        <button class="btn btn-outline btn-sm" onclick="copyShareInviteLink()">
+          <i class="fas fa-copy"></i>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function shareToAllies() {
+  const checked = document.querySelectorAll('.share-ally-check:checked');
+  if (checked.length === 0) {
+    showToast('請至少選擇一位盟友', 'warning');
+    return;
+  }
+  const names = [];
+  checked.forEach(cb => {
+    const labelText = cb.parentElement.textContent.trim();
+    names.push(labelText);
+  });
+  logEvent('share_card_generated', { targets: 'allies', count: checked.length });
+  showToast(`🎉 已分享成就卡片給 ${checked.length} 位盟友！`, 'success', 3000);
+}
+
+function copyShareInviteLink() {
+  const input = document.getElementById('shareInviteLink');
+  if (input) {
+    input.select();
+    document.execCommand('copy');
+    showToast('邀請連結已複製！', 'success');
+  }
 }

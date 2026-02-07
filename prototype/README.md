@@ -56,19 +56,15 @@ prototype/
 
 ### 本地開發
 
-1. 使用任何靜態文件伺服器開啟 `prototype/` 目錄
-2. 或直接在瀏覽器中開啟 `index.html`
+1. 安裝依賴並啟動 Express 伺服器
 
 ```bash
-# 使用 Python 啟動簡易伺服器
 cd prototype
-python -m http.server 8080
-
-# 或使用 Node.js 的 http-server
-npx http-server -p 8080
+npm install
+node server.js
 ```
 
-3. 開啟瀏覽器訪問 `http://localhost:8080`
+2. 開啟瀏覽器訪問 `http://localhost:3000/portal.html`
 
 ### VS Code Live Server
 
@@ -181,7 +177,7 @@ API.generateShareCard()       // 生成分享卡片
 
 ## 📄 相關文件
 
-- [BDD 規格書](../Fin_WMAI_BDD_V1.0_20260213.md)
+- [BDD 規格書 V1.3](../Fin_WMAI_BDD_V1.3_薪守村_含盟友系統_主角等級_20260211.md)
 - [價值主張提案書](../DOC/第二組_價值主張提案書.docx)
 - [循序圖](../DOC/第二組_循序圖.png)
 
