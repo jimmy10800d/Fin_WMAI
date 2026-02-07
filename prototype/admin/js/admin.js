@@ -748,22 +748,22 @@ function renderAlliesAdmin() {
     { type: '✍️ 自訂訊息', sent: 67, blocked: 5 },
   ];
 
-  return \`
+  return `
     <div class="a-stats">
       <div class="a-stat">
-        <div class="a-stat-value">\${allyPairs.length}</div>
+        <div class="a-stat-value">${allyPairs.length}</div>
         <div class="a-stat-label">盟友配對數</div>
       </div>
       <div class="a-stat">
-        <div class="a-stat-value">\${challenges.length}</div>
+        <div class="a-stat-value">${challenges.length}</div>
         <div class="a-stat-label">進行中挑戰</div>
       </div>
       <div class="a-stat">
-        <div class="a-stat-value">\${encourageStats.reduce((s, e) => s + e.sent, 0)}</div>
+        <div class="a-stat-value">${encourageStats.reduce((s, e) => s + e.sent, 0)}</div>
         <div class="a-stat-label">鼓勵訊息總數</div>
       </div>
       <div class="a-stat">
-        <div class="a-stat-value" style="color:var(--admin-red)">\${encourageStats.reduce((s, e) => s + e.blocked, 0)}</div>
+        <div class="a-stat-value" style="color:var(--admin-red)">${encourageStats.reduce((s, e) => s + e.blocked, 0)}</div>
         <div class="a-stat-label">違規攔截</div>
       </div>
     </div>
@@ -773,16 +773,16 @@ function renderAlliesAdmin() {
       <table class="a-table">
         <thead><tr><th>冒險者 A</th><th>冒險者 B</th><th>建立日期</th><th>可見度</th><th>狀態</th><th>操作</th></tr></thead>
         <tbody>
-          \${allyPairs.map(a => \`
+          ${allyPairs.map(a => `
             <tr>
-              <td>\${a.user1}</td>
-              <td>\${a.user2}</td>
-              <td>\${a.since}</td>
-              <td><span class="a-tag a-tag-blue">\${a.visibility}</span></td>
-              <td><span class="a-tag \${a.status === 'active' ? 'a-tag-green' : 'a-tag-orange'}">\${a.status === 'active' ? '已生效' : '待確認'}</span></td>
+              <td>${a.user1}</td>
+              <td>${a.user2}</td>
+              <td>${a.since}</td>
+              <td><span class="a-tag a-tag-blue">${a.visibility}</span></td>
+              <td><span class="a-tag ${a.status === 'active' ? 'a-tag-green' : 'a-tag-orange'}">${a.status === 'active' ? '已生效' : '待確認'}</span></td>
               <td><button class="a-btn a-btn-outline" style="font-size:.72rem;padding:3px 8px;">查看</button></td>
             </tr>
-          \`).join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
@@ -792,21 +792,21 @@ function renderAlliesAdmin() {
       <table class="a-table">
         <thead><tr><th>ID</th><th>挑戰名稱</th><th>發起人</th><th>成員</th><th>進度</th><th>狀態</th></tr></thead>
         <tbody>
-          \${challenges.map(c => \`
+          ${challenges.map(c => `
             <tr>
-              <td style="font-family:monospace;">\${c.id}</td>
-              <td style="font-weight:600;">\${c.name}</td>
-              <td>\${c.creator}</td>
-              <td>\${c.members} 人</td>
+              <td style="font-family:monospace;">${c.id}</td>
+              <td style="font-weight:600;">${c.name}</td>
+              <td>${c.creator}</td>
+              <td>${c.members} 人</td>
               <td>
                 <div class="a-progress" style="width:100px;height:6px;display:inline-block;vertical-align:middle;">
-                  <div class="a-progress-fill" style="width:\${c.progress}%;background:\${c.progress >= 100 ? 'var(--admin-green)' : 'var(--admin-gold)'}"></div>
+                  <div class="a-progress-fill" style="width:${c.progress}%;background:${c.progress >= 100 ? 'var(--admin-green)' : 'var(--admin-gold)'}"></div>
                 </div>
-                <span style="font-size:.78rem;margin-left:6px;">\${c.progress}%</span>
+                <span style="font-size:.78rem;margin-left:6px;">${c.progress}%</span>
               </td>
-              <td><span class="a-tag \${c.status === 'completed' ? 'a-tag-green' : 'a-tag-blue'}">\${c.status === 'completed' ? '已完成' : '進行中'}</span></td>
+              <td><span class="a-tag ${c.status === 'completed' ? 'a-tag-green' : 'a-tag-blue'}">${c.status === 'completed' ? '已完成' : '進行中'}</span></td>
             </tr>
-          \`).join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
@@ -816,14 +816,14 @@ function renderAlliesAdmin() {
       <table class="a-table">
         <thead><tr><th>訊息類型</th><th>發送數</th><th>攔截數</th><th>攔截率</th></tr></thead>
         <tbody>
-          \${encourageStats.map(e => \`
+          ${encourageStats.map(e => `
             <tr>
-              <td style="font-weight:600;">\${e.type}</td>
-              <td>\${e.sent}</td>
-              <td style="color:\${e.blocked > 0 ? 'var(--admin-red)' : 'inherit'}">\${e.blocked}</td>
-              <td>\${e.sent > 0 ? ((e.blocked / e.sent) * 100).toFixed(1) : 0}%</td>
+              <td style="font-weight:600;">${e.type}</td>
+              <td>${e.sent}</td>
+              <td style="color:${e.blocked > 0 ? 'var(--admin-red)' : 'inherit'}">${e.blocked}</td>
+              <td>${e.sent > 0 ? ((e.blocked / e.sent) * 100).toFixed(1) : 0}%</td>
             </tr>
-          \`).join('')}
+          `).join('')}
         </tbody>
       </table>
       <div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;font-size:.78rem;">
@@ -831,7 +831,7 @@ function renderAlliesAdmin() {
         <strong>BANNED_WORDS 攔截：</strong>系統自動偵測「保證獲利、穩賺不賠、借錢投資」等違規用語，並阻擋發送。
       </div>
     </div>
-  \`;
+  `;
 }
 
 /* ---- Leveling Admin (等級系統總覽 — Features O/P) ---- */
@@ -863,7 +863,7 @@ function renderLevelingAdmin() {
     { rank: 6, feature: '長期趨勢報告', unlocked: 12, icon: '📈' },
   ];
 
-  return \`
+  return `
     <div class="a-stats">
       <div class="a-stat">
         <div class="a-stat-value">1,247</div>
@@ -886,18 +886,18 @@ function renderLevelingAdmin() {
     <div class="a-card">
       <h3><i class="fas fa-chart-bar"></i> 階級分布 (6 Ranks × 5 Stars)</h3>
       <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
-        \${rankDistribution.map(r => \`
+        ${rankDistribution.map(r => `
           <div style="flex:1;min-width:120px;text-align:center;padding:16px;border:1px solid var(--admin-border);border-radius:8px;">
-            <div style="font-size:1.5rem;margin-bottom:4px;">\${'⭐'.repeat(Math.min(r.rank, 3))}</div>
-            <div style="font-size:.78rem;color:var(--admin-muted);">R\${r.rank}</div>
-            <div style="font-size:1rem;font-weight:700;">\${r.name}</div>
-            <div style="font-size:1.3rem;font-weight:800;color:var(--admin-gold);margin-top:4px;">\${r.count}</div>
-            <div style="font-size:.72rem;color:var(--admin-muted);">\${r.pct}%</div>
+            <div style="font-size:1.5rem;margin-bottom:4px;">${'⭐'.repeat(Math.min(r.rank, 3))}</div>
+            <div style="font-size:.78rem;color:var(--admin-muted);">R${r.rank}</div>
+            <div style="font-size:1rem;font-weight:700;">${r.name}</div>
+            <div style="font-size:1.3rem;font-weight:800;color:var(--admin-gold);margin-top:4px;">${r.count}</div>
+            <div style="font-size:.72rem;color:var(--admin-muted);">${r.pct}%</div>
             <div class="a-progress" style="height:6px;margin-top:8px;">
-              <div class="a-progress-fill" style="width:\${r.pct}%;background:var(--admin-gold);"></div>
+              <div class="a-progress-fill" style="width:${r.pct}%;background:var(--admin-gold);"></div>
             </div>
           </div>
-        \`).join('')}
+        `).join('')}
       </div>
     </div>
 
@@ -906,15 +906,15 @@ function renderLevelingAdmin() {
       <table class="a-table">
         <thead><tr><th>事件名稱</th><th>單次 XP</th><th>今日觸發</th><th>累計觸發</th><th>今日 XP 貢獻</th></tr></thead>
         <tbody>
-          \${xpEvents.map(e => \`
+          ${xpEvents.map(e => `
             <tr>
-              <td style="font-family:monospace;font-size:.78rem;">\${e.event}</td>
-              <td style="color:var(--admin-gold);font-weight:600;">+\${e.xp}</td>
-              <td>\${e.today}</td>
-              <td>\${e.total.toLocaleString()}</td>
-              <td style="font-weight:600;">\${(e.today * e.xp).toLocaleString()}</td>
+              <td style="font-family:monospace;font-size:.78rem;">${e.event}</td>
+              <td style="color:var(--admin-gold);font-weight:600;">+${e.xp}</td>
+              <td>${e.today}</td>
+              <td>${e.total.toLocaleString()}</td>
+              <td style="font-weight:600;">${(e.today * e.xp).toLocaleString()}</td>
             </tr>
-          \`).join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
@@ -924,14 +924,14 @@ function renderLevelingAdmin() {
       <table class="a-table">
         <thead><tr><th>解鎖階級</th><th>功能</th><th>已解鎖人數</th><th>佔比</th></tr></thead>
         <tbody>
-          \${unlockStats.map(u => \`
+          ${unlockStats.map(u => `
             <tr>
-              <td><span class="a-tag a-tag-gold">R\${u.rank}</span></td>
-              <td>\${u.icon} \${u.feature}</td>
-              <td style="font-weight:600;">\${u.unlocked}</td>
-              <td>\${(u.unlocked / 1247 * 100).toFixed(1)}%</td>
+              <td><span class="a-tag a-tag-gold">R${u.rank}</span></td>
+              <td>${u.icon} ${u.feature}</td>
+              <td style="font-weight:600;">${u.unlocked}</td>
+              <td>${(u.unlocked / 1247 * 100).toFixed(1)}%</td>
             </tr>
-          \`).join('')}
+          `).join('')}
         </tbody>
       </table>
     </div>
@@ -953,5 +953,5 @@ function renderLevelingAdmin() {
         </tbody>
       </table>
     </div>
-  \`;
+  `;
 }
