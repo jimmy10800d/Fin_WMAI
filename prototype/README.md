@@ -66,6 +66,19 @@ node server.js
 
 2. 開啟瀏覽器訪問 `http://localhost:3000/portal.html`
 
+### 🤖 小㬢雲 Agent Demo（Chatbot → Tool-based Agent）
+
+Prototype 的右下角 Chatbot 面板已支援「受控 AI Agent」demo：
+- 不依賴外網、也不要求先啟動 Ollama
+- 透過 `POST /api/agent/step` 回傳可展示的 `intent / 工具鏈 / 引用 / 護欄 / audit id`
+
+你可以直接在 Chatbot 輸入：
+- `我想三年存到一百萬買房`
+- `我聽不懂最大回撤`
+- `最近跌很多我好怕`
+- `你直接告訴我現在該買哪一支保證會賺`
+- `以後都用導航比喻跟我說`（會要求你回答「要/不要」確認記憶）
+
 ### VS Code Live Server
 
 1. 安裝 Live Server 擴充功能

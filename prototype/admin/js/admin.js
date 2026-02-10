@@ -16,6 +16,7 @@ function adminNav(page) {
     compliance: { title: '合規控管', render: renderCompliance },
     users: { title: '冒險者管理', render: renderUsers },
     events: { title: '事件追蹤', render: renderEvents },
+    finops: { title: 'FinOps 成本監控', render: renderFinops },
     scenarios: { title: '情境管理', render: renderScenarios },
     allies: { title: '盟友系統管理', render: renderAlliesAdmin },
     leveling: { title: '等級系統總覽', render: renderLevelingAdmin },
@@ -31,6 +32,127 @@ function adminNav(page) {
 function adminLogout() {
   sessionStorage.removeItem('adminAuth');
   window.location.href = 'login.html';
+}
+
+/* ---- FinOps ---- */
+const FinopsDB = {
+  billingMonth: '2026-02',
+  budget: 12000,
+  monthSpend: 6840,
+  forecast: 10350,
+  usage: [
+    { model: 'llama3.1:8b', provider: 'Ollama', tokens: 182400, cost: 1280, trend: 'up' },
+    { model: 'gpt-4.1-mini', provider: 'Azure OpenAI', tokens: 62400, cost: 1860, trend: 'down' },
+    { model: 'embedding-v2', provider: 'Azure OpenAI', tokens: 980000, cost: 720, trend: 'down' },
+    { model: 'rerank-v1', provider: 'Self-host', tokens: 210000, cost: 410, trend: 'up' },
+  ],
+  dailyCost: [
+    { date: '02/04', cost: 820 },
+    { date: '02/05', cost: 910 },
+    { date: '02/06', cost: 760 },
+    { date: '02/07', cost: 1020 },
+    { date: '02/08', cost: 980 },
+    { date: '02/09', cost: 1180 },
+    { date: '02/10', cost: 1170 },
+  ],
+  alerts: [
+    { level: 'warning', msg: '本月預估花費將超過 85% 預算，請檢查高頻推論任務。' },
+    { level: 'info', msg: 'embedding 批次作業已自動切到夜間排程，成本下降 12%。' },
+  ]
+};
+
+function renderFinops() {
+  const budgetPct = Math.min(100, (FinopsDB.monthSpend / FinopsDB.budget) * 100).toFixed(1);
+  const forecastPct = Math.min(100, (FinopsDB.forecast / FinopsDB.budget) * 100).toFixed(1);
+  const trendTag = (trend) => trend === 'up'
+    ? '<span class="a-tag a-tag-red">上升</span>'
+    : '<span class="a-tag a-tag-green">下降</span>';
+
+  return `
+    <div class="a-stats">
+      <div class="a-stat">
+        <div class="a-stat-value">$${FinopsDB.monthSpend.toLocaleString()}</div>
+        <div class="a-stat-label">本月已用（${FinopsDB.billingMonth}）</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value" style="color:var(--admin-blue)">$${FinopsDB.budget.toLocaleString()}</div>
+        <div class="a-stat-label">月度預算</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value" style="color:var(--admin-orange)">$${FinopsDB.forecast.toLocaleString()}</div>
+        <div class="a-stat-label">月底預估</div>
+      </div>
+      <div class="a-stat">
+        <div class="a-stat-value" style="color:var(--admin-green)">${(FinopsDB.budget - FinopsDB.monthSpend).toLocaleString()}</div>
+        <div class="a-stat-label">剩餘可用</div>
+      </div>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-coins"></i> 成本與預算進度</h3>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:220px;">
+          <div style="font-size:.78rem;color:var(--admin-muted);margin-bottom:6px;">本月使用率 ${budgetPct}%</div>
+          <div class="a-progress" style="height:10px;">
+            <div class="a-progress-fill" style="width:${budgetPct}%;background:var(--admin-red);"></div>
+          </div>
+          <div style="font-size:.72rem;color:var(--admin-muted);margin-top:6px;">已用 $${FinopsDB.monthSpend.toLocaleString()} / 預算 $${FinopsDB.budget.toLocaleString()}</div>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <div style="font-size:.78rem;color:var(--admin-muted);margin-bottom:6px;">月底預估 ${forecastPct}%</div>
+          <div class="a-progress" style="height:10px;">
+            <div class="a-progress-fill" style="width:${forecastPct}%;background:var(--admin-orange);"></div>
+          </div>
+          <div style="font-size:.72rem;color:var(--admin-muted);margin-top:6px;">預估 $${FinopsDB.forecast.toLocaleString()}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-robot"></i> AI 用量與計費</h3>
+      <table class="a-table">
+        <thead>
+          <tr><th>模型</th><th>供應商</th><th>Tokens</th><th>成本</th><th>趨勢</th></tr>
+        </thead>
+        <tbody>
+          ${FinopsDB.usage.map(u => `
+            <tr>
+              <td>${u.model}</td>
+              <td>${u.provider}</td>
+              <td>${u.tokens.toLocaleString()}</td>
+              <td>$${u.cost.toLocaleString()}</td>
+              <td>${trendTag(u.trend)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-chart-area"></i> 近 7 日成本</h3>
+      <div style="display:flex;gap:10px;align-items:flex-end;height:120px;">
+        ${FinopsDB.dailyCost.map(d => `
+          <div style="flex:1;text-align:center;">
+            <div style="height:${Math.max(12, Math.round(d.cost / 12))}px;background:var(--admin-blue);border-radius:8px;"></div>
+            <div style="font-size:.7rem;color:var(--admin-muted);margin-top:6px;">${d.date}</div>
+            <div style="font-size:.72rem;">$${d.cost}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="a-card">
+      <h3><i class="fas fa-triangle-exclamation"></i> 成本提醒</h3>
+      <div style="display:grid;gap:10px;">
+        ${FinopsDB.alerts.map(a => `
+          <div style="padding:12px;border:1px solid var(--admin-border);border-radius:10px;background:rgba(255,255,255,.02);">
+            <span class="a-tag ${a.level === 'warning' ? 'a-tag-orange' : 'a-tag-blue'}">${a.level === 'warning' ? '注意' : '提示'}</span>
+            <span style="margin-left:8px;font-size:.82rem;">${a.msg}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 
 /* ---- Overview ---- */

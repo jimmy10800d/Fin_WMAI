@@ -22,7 +22,8 @@ const AppState = {
     execution: 'locked',
     dashboard: 'locked',
     share: 'locked',
-    allies: 'locked'
+    allies: 'locked',
+    assistant: 'available'
   },
   // Feature data
   goals: null,
@@ -233,7 +234,8 @@ function getPageContent(page) {
     execution: typeof renderExecutionPage === 'function' ? renderExecutionPage : () => '<p>載入中...</p>',
     dashboard: typeof renderDashboardPage === 'function' ? renderDashboardPage : () => '<p>載入中...</p>',
     share: typeof renderSharePage === 'function' ? renderSharePage : () => '<p>載入中...</p>',
-    allies: typeof renderAlliesPage === 'function' ? renderAlliesPage : () => '<p>載入中...</p>'
+    allies: typeof renderAlliesPage === 'function' ? renderAlliesPage : () => '<p>載入中...</p>',
+    assistant: typeof renderAssistantPage === 'function' ? renderAssistantPage : () => '<p>載入中...</p>'
   };
   return (renderers[page] || (() => '<p>頁面不存在</p>'))();
 }
@@ -247,7 +249,8 @@ function initPageScripts(page) {
     execution: typeof initExecutionPage === 'function' ? initExecutionPage : null,
     dashboard: typeof initDashboardPage === 'function' ? initDashboardPage : null,
     share: typeof initSharePage === 'function' ? initSharePage : null,
-    allies: typeof initAlliesPage === 'function' ? initAlliesPage : null
+    allies: typeof initAlliesPage === 'function' ? initAlliesPage : null,
+    assistant: typeof initAssistantPage === 'function' ? initAssistantPage : null
   };
   if (inits[page]) inits[page]();
 }

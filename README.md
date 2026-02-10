@@ -34,6 +34,8 @@
 | 🎉 **冒險日誌** | 隱私保護的成就分享功能 |
 | 🤝 **盟友系統** | 邀請好友、打氣鼓勵、提醒通知、共同挑戰 |
 | ⭐ **主角等級** | 6 段位 × 5 星 XP 升級系統，解鎖更多功能 |
+| 🧠 **AI 助理管理** | 對話記憶維護、每週戰績排程回報、目標計畫與里程碑追蹤 |
+| 🤖 **Agent Demo** | 意圖辨識、工具鏈執行、RAG 引用、護欄拒絕、Ollama 混合潤色 |
 
 ---
 
@@ -53,7 +55,7 @@ Fin_WMAI/
 │   │   └── login.css         # 登入頁樣式
 │   ├── js/                   # JavaScript 模組
 │   │   ├── app.js            # 主應用程式（路由、狀態、等級系統）
-│   │   ├── chatbot.js        # AI 聊天機器人（小曦雲）
+│   │   ├── chatbot.js        # AI 聊天機器人（小曦雲）— Agent + Ollama 混合模式
 │   │   ├── login.js          # 登入邏輯
 │   │   ├── data-service.js   # 資料服務
 │   │   └── pages/            # 各頁面模組
@@ -64,9 +66,12 @@ Fin_WMAI/
 │   │       ├── execution.js  # 交易執行
 │   │       ├── dashboard.js  # 戰績回顧
 │   │       ├── share.js      # 冒險日誌
-│   │       └── allies.js     # 盟友系統
+│   │       ├── allies.js     # 盟友系統
+│   │       └── assistant.js  # AI 助理管理（記憶/排程/計畫）
 │   ├── admin/                # 後台管理系統
 │   ├── data/                 # Demo 資料
+│   │   ├── demo-data.json    # 客戶/帳戶模擬資料
+│   │   └── agent-demo.json   # Agent Demo KB/情境/範本
 │   ├── IP_ICON/              # IP 角色圖示（8 款表情）
 │   └── tests/                # 測試檔案
 │       └── run-tests.js      # API 測試（38 項）
@@ -120,6 +125,37 @@ node tests/run-tests.js
 # 安裝並啟動 Ollama（系統會自動偵測可用模型）
 ollama run llama3.1:8b
 ```
+
+> 🟢 啟動後 chatbot 會自動偵測 Ollama 與 Agent Demo。Agent Demo 負責意圖分類、工具鏈、護欄拒絕；Ollama 負責自然語言潤色。兩者可獨立運作。
+
+### Agent Demo API
+
+伺服器內建 Agent Demo 端點，無須額外安裝：
+
+| 端點 | 說明 |
+|------|------|
+| `GET /api/health` | 服務健康檢查 |
+| `POST /api/intent/classify` | 意圖分類（7 種 intent） |
+| `POST /api/agent/step` | 受控 Agent 工具鏈執行 |
+| `GET/POST/PATCH/DELETE /api/assistant/memory` | 對話記憶 CRUD |
+| `GET/POST/PATCH/DELETE /api/assistant/schedules` | 排程任務 CRUD |
+| `POST /api/assistant/schedules/:id/trigger` | 手動觸發排程（如每週戰績回報） |
+| `GET/POST/PATCH/DELETE /api/assistant/plans` | 目標計畫與里程碑 CRUD |
+| `GET /api/ollama/health` | Ollama 代理健康檢查 |
+| `POST /api/ollama/chat` | Ollama 對話代理 |
+| `POST /api/ollama/chat/stream` | Ollama 串流對話代理 |
+
+### 常見問題快捷鍵
+
+聊天面板開啟後會顯示 5 項預設常見問題按鈕，點擊即可快速發問：
+
+| 按鈕 | 對應問題 |
+|------|---------|
+| 🎯 我該從哪裡開始？ | 新手引導流程說明 |
+| 🛡️ 什麼是 KYC 風控？ | KYC 風險評估解說 |
+| 📊 如何看懂投資方案？ | 投資方案白話翻譯 |
+| 💰 最大回撤是什麼？ | Agent RAG 引用解說 |
+| 🏆 怎麼查看我的戰績？ | 投資績效與目標達成率 |
 
 ---
 
@@ -217,7 +253,8 @@ ollama run llama3.1:8b
 |------|------|------|
 | 前端 | HTML5 / CSS3 / Vanilla JS | SPA 架構、CSS Variables 主題切換 |
 | 後端 | Node.js + Express | RESTful API、靜態檔案服務 |
-| AI 服務 | Ollama | 本地部署 LLM（可選） |
+| AI 服務 | Ollama + Agent Demo | 本地部署 LLM（llama3.1:8b）+ 意圖/工具鏈/護欄 Agent |
+| AI 助理 API | Express REST | 記憶/排程/計畫 CRUD + Ollama Proxy |
 | 設計系統 | 莫蘭迪色系 CSS 變數 | 深色/淺色模式自動切換 |
 | 字型 | Google Fonts Noto Sans TC | 中文繁體最佳化 |
 | 圖示 | Font Awesome 6.4.0 | 全站一致圖示 |

@@ -1,6 +1,7 @@
 ﻿/* ================================================
    【NPC 小曦雲】AI 聊天助手 — Chatbot Panel
-   支援 Ollama LLM + 本地 fallback
+   支援 Agent Demo + Ollama LLM（混合模式）+ 本地 fallback
+   對話記憶自動持久化至 /api/assistant/memory
    ================================================ */
 
 const Chatbot = {
@@ -8,6 +9,12 @@ const Chatbot = {
   chatHistory: [],   // Ollama conversation memory
   isOpen: false,
   isStreaming: false,
+
+  /* --- Agent Demo API 設定（prototype server.js） --- */
+  useAgentApi: true,
+  agentApiBaseUrl: '',
+  agentSessionId: null,
+  showAgentTrace: false,
 
   /* --- Ollama 設定 --- */
   ollamaBaseUrl: 'http://localhost:11434',
@@ -52,33 +59,75 @@ const Chatbot = {
     // 初始化對話歷史
     this.chatHistory = [{ role: 'system', content: this.systemPrompt }];
 
+    // 初始化 Agent session
+    this.agentSessionId = 'sess_' + Date.now();
+    this.agentApiBaseUrl = this.getAgentApiBaseUrl();
+
+    // 檢測 Agent Demo API 是否可用（成功則優先使用）
+    this.checkAgentApiHealth();
+
     // 檢測 Ollama 是否可用
     this.checkOllamaHealth();
 
     // Welcome message (不透過 Ollama)
     this.addBotMessage('歡迎來到薪守村！✨ 我是 NPC 小曦雲，你的理財冒險顧問。有任何問題都可以問我喔！');
     this.addBotMessage('💡 試著問我：\n• 我該從哪裡開始？\n• 什麼是 KYC？\n• 幫我分析投資策略');
+    // 顯示常見問題快捷鍵
+    this.showFaqButtons();  },
+
+  getAgentApiBaseUrl() {
+    // 1) 若頁面就是由 node server 提供（http://localhost:3000），用同源
+    try {
+      const origin = window.location?.origin || '';
+      if (origin.startsWith('http')) return origin;
+    } catch (e) { /* ignore */ }
+    // 2) 否則 fallback 到預設 prototype server
+    return 'http://localhost:3000';
   },
 
-  /** 檢查 Ollama 服務是否在線 */
+  async checkAgentApiHealth() {
+    if (!this.useAgentApi) return;
+    try {
+      const resp = await fetch(this.agentApiBaseUrl + '/api/health', {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      if (data?.ok) {
+        const ver = data?.agentDemo?.version || 'unknown';
+        this.addSystemNote(`🟣 Agent Demo 已連線 — v${ver}`);
+        return;
+      }
+      throw new Error('bad response');
+    } catch (e) {
+      console.warn('[小曦雲] Agent Demo API 不可用，改用 Ollama/本地模式:', e.message);
+      this.useAgentApi = false;
+      this.addSystemNote('⚪ Agent Demo 未連線（改用 Ollama/本地模式）');
+    }
+  },
+
+  /** 檢查 Ollama 服務是否在線（透過 server proxy） */
   async checkOllamaHealth() {
     try {
-      const resp = await fetch(this.ollamaBaseUrl + '/api/tags', {
+      const resp = await fetch(this.agentApiBaseUrl + '/api/ollama/health', {
         method: 'GET',
         signal: AbortSignal.timeout(3000)
       });
       if (resp.ok) {
         const data = await resp.json();
-        const models = (data.models || []).map(m => m.name);
-        console.log('[小曦雲] Ollama 連線成功，可用模型:', models);
-        // 確認指定模型存在
-        const hasModel = models.some(m => m.startsWith(this.ollamaModel));
-        if (!hasModel) {
-          console.warn(`[小曦雲] 模型 ${this.ollamaModel} 未找到，可用: ${models.join(', ')}`);
-          this.addSystemNote(`⚠️ 模型 ${this.ollamaModel} 未就緒，使用本地模式`);
-          this.useOllama = false;
+        if (data.ok) {
+          console.log('[小曦雲] Ollama 連線成功（透過 proxy），可用模型:', data.models);
+          const hasModel = (data.models || []).some(m => m.startsWith(this.ollamaModel));
+          if (!hasModel) {
+            console.warn(`[小曦雲] 模型 ${this.ollamaModel} 未找到`);
+            this.addSystemNote(`⚠️ 模型 ${this.ollamaModel} 未就緒，使用本地模式`);
+            this.useOllama = false;
+          } else {
+            this.addSystemNote('🟢 Ollama AI 已連線 — ' + this.ollamaModel);
+          }
         } else {
-          this.addSystemNote('🟢 Ollama AI 已連線 — ' + this.ollamaModel);
+          throw new Error(data.error || 'Ollama proxy error');
         }
       } else {
         throw new Error('HTTP ' + resp.status);
@@ -112,7 +161,10 @@ const Chatbot = {
     this.addUserMessage(text);
     this.chatHistory.push({ role: 'user', content: text });
 
-    if (this.useOllama) {
+    // 混合模式：Agent Demo 優先（intent + 工具鏈 + 護欄），Ollama 負責自然語言潤色
+    if (this.useAgentApi) {
+      await this.sendToAgentApi(text);
+    } else if (this.useOllama) {
       await this.sendToOllama(text);
     } else {
       this.showTyping();
@@ -121,8 +173,118 @@ const Chatbot = {
         const reply = this.localFallbackReply(text);
         this.addBotMessage(reply);
         this.chatHistory.push({ role: 'assistant', content: reply });
+        this.persistToMemory(text, reply);
       }, 600 + Math.random() * 400);
     }
+  },
+
+  /** 呼叫 prototype server 的 /api/agent/step（非 LLM，純 demo 工具鏈） */
+  async sendToAgentApi(userText) {
+    this.isStreaming = true;
+    this.showTyping();
+
+    const userId = AppState?.user?.id || 'demo';
+    const body = {
+      userId,
+      sessionId: this.agentSessionId || ('sess_' + Date.now()),
+      text: userText,
+      max_steps: 4,
+      max_tool_calls: 2,
+      deadline_ms: 2500
+    };
+
+    try {
+      const resp = await fetch(this.agentApiBaseUrl + '/api/agent/step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok) throw new Error('Agent HTTP ' + resp.status);
+      const data = await resp.json();
+
+      this.hideTyping();
+
+      const replyText = data?.replyText || '（沒有回覆）';
+      const traceText = data?.traceText || this.buildTraceText(data?.trace);
+
+      // 若 Ollama 也可用，嘗試用 Ollama 對 Agent 回覆做自然語言潤色
+      let finalReply = replyText;
+      if (this.useOllama && data?.trace?.intent && data.trace.intent !== 'guardrail_refuse') {
+        try {
+          const polished = await this.polishWithOllama(replyText, userText);
+          if (polished) finalReply = polished;
+        } catch (_) { /* 潤色失敗就用原回覆 */ }
+      }
+
+      const full = (this.showAgentTrace && traceText)
+        ? (finalReply + `\n\n**【Agent Trace】**\n${traceText}`)
+        : finalReply;
+      this.addBotMessage(full);
+      this.chatHistory.push({ role: 'assistant', content: finalReply });
+      this.persistToMemory(userText, finalReply);
+
+    } catch (e) {
+      console.error('[小曦雲] Agent API 錯誤:', e);
+      this.hideTyping();
+      // Failover → Ollama → local
+      if (this.useOllama) {
+        await this.sendToOllama(userText);
+      } else {
+        const reply = this.localFallbackReply(userText);
+        this.addBotMessage(reply + '\n\n_(Agent Demo 暫時不可用，使用本地回應)_');
+        this.chatHistory.push({ role: 'assistant', content: reply });
+        this.persistToMemory(userText, reply);
+      }
+    }
+
+    this.isStreaming = false;
+  },
+
+  /** 用 Ollama 潤色 Agent 的回覆（非 streaming，簡短呼叫） */
+  async polishWithOllama(agentReply, userText) {
+    const body = {
+      model: this.ollamaModel,
+      messages: [
+        { role: 'system', content: this.systemPrompt },
+        { role: 'system', content: '以下是 Agent 生成的草稿回覆，請用小曦雲語氣稍微潤色（保留所有數據不要改動）。控制在 200 字以內。' },
+        { role: 'user', content: userText },
+        { role: 'assistant', content: agentReply },
+        { role: 'user', content: '請潤色上面的回覆。' }
+      ],
+      stream: false,
+      options: { temperature: 0.5, num_predict: 250 }
+    };
+    const resp = await fetch(this.agentApiBaseUrl + '/api/ollama/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data?.message?.content || null;
+  },
+
+  buildTraceText(trace) {
+    if (!trace) return '';
+    const lines = [];
+    if (trace.intent) lines.push(`intent: ${trace.intent} (${trace.confidence ?? ''})`);
+    if (Array.isArray(trace.tool_calls) && trace.tool_calls.length) {
+      lines.push('工具鏈：');
+      trace.tool_calls.forEach((c, i) => {
+        lines.push(`  ${i + 1}) ${c.tool_name}@${c.tool_version} — ${c.status}${c.latency_ms != null ? ` (${c.latency_ms}ms)` : ''}`);
+      });
+    }
+    if (Array.isArray(trace.citations) && trace.citations.length) {
+      lines.push('引用：');
+      trace.citations.forEach(c => lines.push(`  - ${c.source_id} (${c.doc_version})`));
+    }
+    if (trace.guardrails?.action && trace.guardrails.action !== 'allow') {
+      lines.push(`護欄：${trace.guardrails.action}${Array.isArray(trace.guardrails.reason_codes) && trace.guardrails.reason_codes.length ? ` — ${trace.guardrails.reason_codes.join(', ')}` : ''}`);
+    }
+    if (trace.audit?.correlation_id) lines.push(`audit: ${trace.audit.correlation_id}`);
+    return lines.join('\n');
   },
 
   /** 呼叫 Ollama /api/chat (streaming) */
@@ -145,7 +307,8 @@ const Chatbot = {
     };
 
     try {
-      const resp = await fetch(this.ollamaBaseUrl + '/api/chat', {
+      // 使用 server proxy 以避免 CORS
+      const resp = await fetch(this.agentApiBaseUrl + '/api/ollama/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -184,6 +347,7 @@ const Chatbot = {
 
       this.messages.push({ role: 'bot', text: fullReply });
       this.chatHistory.push({ role: 'assistant', content: fullReply });
+      this.persistToMemory(userText, fullReply);
 
     } catch (e) {
       console.error('[小曦雲] Ollama 錯誤:', e);
@@ -192,6 +356,7 @@ const Chatbot = {
       const reply = this.localFallbackReply(userText);
       this.addBotMessage(reply + '\n\n_(Ollama 暫時不可用，使用本地回應)_');
       this.chatHistory.push({ role: 'assistant', content: reply });
+      this.persistToMemory(userText, reply);
     }
 
     this.isStreaming = false;
@@ -316,6 +481,69 @@ const Chatbot = {
     const d = document.createElement('div');
     d.textContent = text;
     return d.innerHTML;
+  },
+
+  /** 將對話記錄持久化到 Memory API */
+  async persistToMemory(userText, botReply) {
+    try {
+      const userId = AppState?.user?.id || 'demo';
+      const now = new Date().toISOString();
+      await fetch(this.agentApiBaseUrl + '/api/assistant/memory/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          messages: [
+            { role: 'user', text: userText, timestamp: now },
+            { role: 'bot', text: botReply, timestamp: now }
+          ]
+        })
+      });
+    } catch (e) {
+      console.warn('[小曦雲] 記憶持久化失敗:', e.message);
+    }
+  },
+
+  /* --- 五項預設常見問題快捷鍵 --- */
+  faqList: [
+    { icon: '🎯', label: '我該從哪裡開始？', text: '我是新手，該從哪裡開始我的理財冒險？' },
+    { icon: '🛡️', label: '什麼是 KYC 風控？', text: '請問什麼是 KYC 風險評估？我為什麼要做？' },
+    { icon: '📊', label: '如何看懂投資方案？', text: '我看不懂投資方案，可以用白話解釋嗎？' },
+    { icon: '💰', label: '最大回撤是什麼？', text: '我聽不懂最大回撤' },
+    { icon: '🏆', label: '怎麼查看我的戰績？', text: '我想看我目前的投資戰績和目標達成率' }
+  ],
+
+  showFaqButtons() {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-faq-wrap';
+    wrap.id = 'chatFaqButtons';
+    wrap.innerHTML = `
+      <div class="chat-faq-title">常見問題</div>
+      <div class="chat-faq-grid">
+        ${this.faqList.map((f, i) => `
+          <button class="faq-btn" onclick="Chatbot.askFaq(${i})">
+            <span class="faq-icon">${f.icon}</span>
+            <span class="faq-label">${f.label}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(wrap);
+    container.scrollTop = container.scrollHeight;
+  },
+
+  askFaq(index) {
+    const faq = this.faqList[index];
+    if (!faq) return;
+    // 移除 FAQ 按鈕組
+    const el = document.getElementById('chatFaqButtons');
+    if (el) el.remove();
+    // 用輸入框送出
+    const input = document.getElementById('chatInput');
+    if (input) input.value = faq.text;
+    this.send();
   },
 
   /* --- 本地 Fallback 回覆（Ollama 不可用時） --- */

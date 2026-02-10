@@ -5,6 +5,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -30,6 +31,31 @@ const store = {
   xpLimits: {},     // userId_eventType_date -> count
   shareCards: {}
 };
+
+/* ========== Agent Demo KB (Approved Content) ========== */
+function loadAgentDemoData() {
+  try {
+    const filePath = path.join(__dirname, 'data', 'agent-demo.json');
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed;
+  } catch (e) {
+    console.warn('[AgentDemo] failed to load data/agent-demo.json:', e.message);
+    return {
+      version: '0.0.0',
+      approved_kb: [],
+      templates: {
+        disclosure_voice_short_v1: '我可以用白話幫你理解風險與選項，但我不會保證獲利，也不會指示你買賣特定標的。要我先用一句話說重點，還是展開細節？'
+      },
+      demo_scenarios: []
+    };
+  }
+}
+
+const agentDemoData = loadAgentDemoData();
+
+// In-memory sessions for agent demo
+store.agentSessions = {}; // sessionId -> { userId, createdAt, sessionMemory, profileMemory }
 
 /* ========== XP Config ========== */
 const XP_CONFIG = {
@@ -77,6 +103,682 @@ function logEvent(eventName, data = {}) {
   store.events.push(evt);
   return evt;
 }
+
+/* ========== Agent Demo Helpers ========== */
+function nowIso() { return new Date().toISOString(); }
+
+function classifyIntent(text = '') {
+  const t = String(text || '').trim();
+  const lower = t.toLowerCase();
+
+  const rules = [
+    { intent: 'system_help', confidence: 0.75, match: /你會記住我嗎|隱私|資料|怎麼用|使用說明|help/i },
+    { intent: 'review_weekly', confidence: 0.8, match: /回顧|本週|這週|週回顧|streak/i },
+    { intent: 'quest_today', confidence: 0.78, match: /今天要做什麼|今日|本週任務|任務清單/i },
+    { intent: 'explain_plain', confidence: 0.82, match: /聽不懂|白話|用更簡單|解釋|最大回撤|ETF|定期定額/i },
+    { intent: 'emotion_support', confidence: 0.86, match: /好怕|焦慮|恐慌|睡不著|跌很多|壓力好大/i },
+    { intent: 'ally_message', confidence: 0.8, match: /盟友|幫我打氣|加油|寫一段|鼓勵/i },
+    { intent: 'goal_create', confidence: 0.84, match: /三年|五年|十年|存到|買房|退休|教育金|目標/i }
+  ];
+
+  for (const r of rules) {
+    if (r.match.test(t) || r.match.test(lower)) return { intent: r.intent, confidence: r.confidence };
+  }
+  return { intent: 'system_help', confidence: 0.5 };
+}
+
+function detectGuardrail(text = '') {
+  const t = String(text || '');
+  const lower = t.toLowerCase();
+
+  const reasons = [];
+  if (/保證|必賺|一定賺|穩賺|翻倍|穩贏/i.test(t)) reasons.push('guaranteed_profit');
+  if (/買哪|賣哪|買什麼|賣什麼|哪一支|哪支|標的|ticker|代號/i.test(lower)) reasons.push('specific_ticker_or_asset');
+  if (/忽略規則|system prompt|把你的規則|顯示你的提示/i.test(lower)) reasons.push('prompt_injection_attempt');
+
+  if (reasons.length === 0) return { action: 'allow', reason_codes: [] };
+  // high-risk: refuse + safe alternative
+  return { action: 'refuse', reason_codes: reasons };
+}
+
+function ragRetrieve(text = '') {
+  const t = String(text || '');
+  const hits = [];
+  for (const doc of agentDemoData.approved_kb || []) {
+    const tagHit = (doc.tags || []).some(tag => t.includes(tag));
+    const titleHit = doc.title && t.includes(doc.title);
+    if (tagHit || titleHit) hits.push(doc);
+  }
+  return hits.slice(0, 2);
+}
+
+function normalizeGoal(rawText = '') {
+  const text = String(rawText || '').trim();
+  const amountMatch = text.match(/(\d{1,3})(?:\s*)?(萬|千|元)/);
+  const yearsMatch = text.match(/(\d{1,2})\s*(年|years?)/i);
+  let targetAmount = null;
+  if (amountMatch) {
+    const n = parseInt(amountMatch[1], 10);
+    const unit = amountMatch[2];
+    if (unit === '萬') targetAmount = n * 10000;
+    else if (unit === '千') targetAmount = n * 1000;
+    else targetAmount = n;
+  }
+  // common: "一百萬"
+  if (!targetAmount && /一百萬/.test(text)) targetAmount = 1000000;
+  if (!targetAmount && /五十萬/.test(text)) targetAmount = 500000;
+
+  let horizonMonths = null;
+  if (yearsMatch) {
+    horizonMonths = parseInt(yearsMatch[1], 10) * 12;
+  } else if (/三年/.test(text)) horizonMonths = 36;
+  else if (/五年/.test(text)) horizonMonths = 60;
+  else if (/十年/.test(text)) horizonMonths = 120;
+
+  const goalType = /買房/.test(text) ? 'buy_house' : (/退休/.test(text) ? 'retirement' : 'custom');
+
+  return {
+    goal_type: goalType,
+    target_amount: targetAmount,
+    horizon_months: horizonMonths,
+    raw_text: text
+  };
+}
+
+function buildQuestList(goalJson) {
+  const monthly = goalJson?.target_amount && goalJson?.horizon_months
+    ? Math.ceil(goalJson.target_amount / goalJson.horizon_months)
+    : null;
+  const quests = [
+    { id: 'q_budget', name: '先確認每月可投入金額', hint: '先抓一個不影響生活品質的數字', status: 'todo' },
+    { id: 'q_emergency', name: '建立緊急預備金', hint: '優先建立 3–6 個月生活費', status: 'todo' },
+    { id: 'q_dca', name: '設定定期定額', hint: '用小額、固定頻率建立紀律', status: 'todo' }
+  ];
+  if (monthly) {
+    quests.unshift({
+      id: 'q_monthly_target',
+      name: `月度目標：每月約存/投入 ${monthly.toLocaleString()} 元`,
+      hint: '先做得到，比做很大更重要',
+      status: 'todo'
+    });
+  }
+  return quests;
+}
+
+function rewriteAllyMessage(text = '') {
+  const t = String(text || '').trim();
+  // remove command-like pressure
+  const softened = t
+    .replace(/你一定要|你必須|你給我/gi, '如果你願意')
+    .replace(/不准|一定要/gi, '可以試試');
+  return `我幫你改成更溫和、沒有施壓的版本：\n\n${softened || '你已經做得很棒了！我們一起慢慢來。'}`;
+}
+
+function maybePreferenceWrite(text = '') {
+  const t = String(text || '');
+  if (/導航比喻/.test(t)) {
+    return { field: 'metaphor_preference', value: 'navigation', ask: '要我把「導航比喻」記成你的偏好嗎？（回答：要 / 不要）' };
+  }
+  if (/運動員比喻/.test(t)) {
+    return { field: 'metaphor_preference', value: 'sports', ask: '要我把「運動員比喻」記成你的偏好嗎？（回答：要 / 不要）' };
+  }
+  return null;
+}
+
+function ensureSession(sessionId, userId) {
+  if (!store.agentSessions[sessionId]) {
+    store.agentSessions[sessionId] = {
+      userId,
+      createdAt: nowIso(),
+      sessionMemory: { stage: 'idle', last_intents: [] },
+      profileMemory: {}
+    };
+  }
+  return store.agentSessions[sessionId];
+}
+
+function buildTraceBlock(trace) {
+  const lines = [];
+  if (trace.intent) lines.push(`intent: ${trace.intent} (${trace.confidence ?? 0})`);
+  if (trace.tool_calls?.length) {
+    lines.push('工具鏈：');
+    trace.tool_calls.forEach((c, i) => {
+      lines.push(`  ${i + 1}) ${c.tool_name}@${c.tool_version} — ${c.status}${c.latency_ms != null ? ` (${c.latency_ms}ms)` : ''}`);
+    });
+  }
+  if (trace.citations?.length) {
+    lines.push('引用：');
+    trace.citations.forEach(c => lines.push(`  - ${c.source_id} (${c.doc_version})`));
+  }
+  if (trace.guardrails?.action && trace.guardrails.action !== 'allow') {
+    lines.push(`護欄：${trace.guardrails.action}${trace.guardrails.reason_codes?.length ? ` — ${trace.guardrails.reason_codes.join(', ')}` : ''}`);
+  }
+  if (trace.audit?.correlation_id) lines.push(`audit: ${trace.audit.correlation_id}`);
+  return lines.join('\n');
+}
+
+/* ========== Health ========== */
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'Fin_WMAI Prototype Server',
+    agentDemo: { version: agentDemoData.version || 'unknown', kbDocs: (agentDemoData.approved_kb || []).length }
+  });
+});
+
+/* ========== Intent Router (Demo) ========== */
+app.post('/api/intent/classify', (req, res) => {
+  const { text } = req.body || {};
+  const result = classifyIntent(text);
+  logEvent('intent_classified', { intent: result.intent, confidence: result.confidence });
+  res.json({ success: true, ...result });
+});
+
+/* ========== Agent Step (Demo) ========== */
+app.post('/api/agent/step', (req, res) => {
+  const startedAt = Date.now();
+  const {
+    userId = 'demo',
+    sessionId = 'sess_demo',
+    text = '',
+    max_steps = 4,
+    max_tool_calls = 2,
+    deadline_ms = 2500
+  } = req.body || {};
+
+  const correlationId = genId('corr');
+  const session = ensureSession(sessionId, userId);
+  const intentResult = classifyIntent(text);
+  const guardrail = detectGuardrail(text);
+
+  const toolCalls = [];
+  const citations = [];
+  const memoryWriteRequests = [];
+
+  session.sessionMemory.last_intents = [...(session.sessionMemory.last_intents || []), intentResult.intent].slice(-5);
+
+  // Handle preference confirmation
+  if (/^\s*(要|不要)\s*$/.test(String(text || '').trim())) {
+    const pending = session.sessionMemory.pending_profile_write;
+    if (pending && pending.field && pending.value) {
+      if (String(text || '').trim() === '要') {
+        session.profileMemory[pending.field] = pending.value;
+        delete session.sessionMemory.pending_profile_write;
+        logEvent('profile_memory_written', { userId, field: pending.field, value: pending.value });
+        const trace = {
+          intent: 'system_help',
+          confidence: 0.9,
+          tool_calls: [],
+          citations: [],
+          guardrails: { action: 'allow', reason_codes: [] },
+          memory: { profile: session.profileMemory },
+          audit: { correlation_id: correlationId }
+        };
+        return res.json({
+          success: true,
+          replyText: `好，我記下來了：${pending.field} = ${pending.value}。之後我會優先用你喜歡的說法。`,
+          trace,
+          traceText: buildTraceBlock(trace)
+        });
+      }
+      delete session.sessionMemory.pending_profile_write;
+      const trace = {
+        intent: 'system_help',
+        confidence: 0.9,
+        tool_calls: [],
+        citations: [],
+        guardrails: { action: 'allow', reason_codes: [] },
+        audit: { correlation_id: correlationId }
+      };
+      return res.json({
+        success: true,
+        replyText: '沒問題，我不會記住這個偏好。你隨時也可以再跟我說一次。',
+        trace,
+        traceText: buildTraceBlock(trace)
+      });
+    }
+  }
+
+  // Deadline guard: if already too slow, degrade (demo)
+  if (Date.now() - startedAt > deadline_ms) {
+    return res.json({
+      success: true,
+      replyText: '我先用一句話說重點：我們可以先把問題拆小、用最安全的方式釐清下一步。你想先講目標、風險，還是情緒？',
+      trace: {
+        intent: intentResult.intent,
+        confidence: intentResult.confidence,
+        tool_calls: [],
+        citations: [],
+        guardrails: { action: 'allow', reason_codes: [] },
+        audit: { correlation_id: correlationId, degraded: true }
+      }
+    });
+  }
+
+  let replyText = '';
+
+  // Guardrail refusal path
+  if (guardrail.action === 'refuse') {
+    const disclosure = agentDemoData.templates?.disclosure_voice_short_v1 || '我可以用白話幫你理解風險與選項，但我不會保證獲利，也不會指示你買賣特定標的。';
+    toolCalls.push({
+      tool_name: 'risk_disclosure',
+      tool_version: '1.0.0',
+      status: 'ok',
+      latency_ms: 8,
+      output: { template_id: 'disclosure_voice_short_v1' }
+    });
+    logEvent('risk_disclosure_shown', { userId, correlationId });
+    replyText = `${disclosure}\n\n我沒辦法直接告訴你買/賣哪一支或保證獲利，但我可以：\n1) 幫你用白話理解風險（例如最大回撤）\n2) 依你的目標與期限，整理『選項清單』給你比較（不指定標的）\n\n你想先從哪個開始？`;
+    const trace = {
+      intent: intentResult.intent,
+      confidence: intentResult.confidence,
+      tool_calls: toolCalls.slice(0, max_tool_calls),
+      citations,
+      guardrails: guardrail,
+      audit: { correlation_id: correlationId }
+    };
+    return res.json({
+      success: true,
+      replyText,
+      trace,
+      traceText: buildTraceBlock(trace)
+    });
+  }
+
+  // Tool-based behaviors (bounded)
+  const stepsBudget = Math.max(1, Math.min(10, Number(max_steps) || 4));
+  const toolBudget = Math.max(0, Math.min(5, Number(max_tool_calls) || 2));
+  let toolCallsUsed = 0;
+  let stepsUsed = 0;
+
+  const pref = maybePreferenceWrite(text);
+  if (pref) {
+    session.sessionMemory.pending_profile_write = { field: pref.field, value: pref.value };
+    memoryWriteRequests.push({ type: 'profile_write', ...pref });
+    replyText = `可以的！我可以用你喜歡的比喻方式來講。\n\n${pref.ask}`;
+    const trace = {
+      intent: 'system_help',
+      confidence: 0.88,
+      tool_calls: [],
+      citations: [],
+      guardrails: { action: 'allow', reason_codes: [] },
+      memory_write_requests: memoryWriteRequests,
+      audit: { correlation_id: correlationId }
+    };
+    return res.json({
+      success: true,
+      replyText,
+      trace,
+      traceText: buildTraceBlock(trace)
+    });
+  }
+
+  if (intentResult.intent === 'goal_create' && stepsUsed < stepsBudget) {
+    stepsUsed++;
+    session.sessionMemory.stage = 'goal_onboarding';
+    if (toolCallsUsed < toolBudget) {
+      const t0 = Date.now();
+      const goalJson = normalizeGoal(text);
+      const t1 = Date.now();
+      toolCalls.push({ tool_name: 'goal_normalizer', tool_version: '1.0.0', status: 'ok', latency_ms: t1 - t0, output: goalJson });
+      toolCallsUsed++;
+      logEvent('tool_called', { userId, tool_name: 'goal_normalizer', correlationId, input_schema_version: '2026-02-09' });
+
+      if (toolCallsUsed < toolBudget) {
+        const p0 = Date.now();
+        const questList = buildQuestList(goalJson);
+        const p1 = Date.now();
+        toolCalls.push({ tool_name: 'quest_planner', tool_version: '1.0.0', status: 'ok', latency_ms: p1 - p0, output: { quests: questList } });
+        toolCallsUsed++;
+        logEvent('tool_called', { userId, tool_name: 'quest_planner', correlationId, input_schema_version: '2026-02-09' });
+
+        replyText = `我先用一句話說重點：我們可以把目標拆成每週可完成的小任務。\n\n我理解到你的目標是：${goalJson.goal_type === 'buy_house' ? '買房' : '你的目標'}，期限 ${goalJson.horizon_months ? Math.round(goalJson.horizon_months / 12) + ' 年' : '（未填）'}，金額 ${goalJson.target_amount ? goalJson.target_amount.toLocaleString() + ' 元' : '（未填）'}。\n\n下一步我建議先做：\n- ${questList.slice(0, 3).map(q => q.name).join('\n- ')}\n\n要我幫你把「每月可投入金額」也一起抓出來嗎？`;
+      } else {
+        replyText = '我可以幫你把目標拆成小任務。你希望期限幾年、目標金額多少、每月大概能投入多少？';
+      }
+    }
+  }
+
+  if (!replyText && intentResult.intent === 'explain_plain' && stepsUsed < stepsBudget) {
+    stepsUsed++;
+    const docs = ragRetrieve(text);
+    if (docs.length) {
+      docs.forEach(d => citations.push({ source_id: d.source_id, doc_version: d.doc_version, retrieved_at: nowIso() }));
+      replyText = `我先用一句話說重點：這個概念是在幫你量化「最糟時會跌多深」。\n\n${docs[0].content}\n\n想要我再用另一種比喻（運動員/導航/花園）講一次嗎？`;
+      logEvent('rag_retrieved', { userId, correlationId, sources: docs.map(d => d.source_id) });
+    } else {
+      replyText = '我可以用白話解釋，但我需要你告訴我你卡住的名詞是什麼（例如：最大回撤、ETF、定期定額）。';
+    }
+  }
+
+  if (!replyText && intentResult.intent === 'emotion_support' && stepsUsed < stepsBudget) {
+    stepsUsed++;
+    const docs = ragRetrieve('恐慌');
+    if (docs.length) citations.push({ source_id: docs[0].source_id, doc_version: docs[0].doc_version, retrieved_at: nowIso() });
+    replyText = `我聽到你很怕，這很正常。\n\n我們先做 30 秒：慢吸慢吐 3 次（4 秒吸、6 秒吐）。\n\n接著你只要回答我一題：你最怕的是「繼續跌」還是「我現在做錯決定」？\n\n我會先用一句話抓重點，再給你 2 個安全選項。`;
+  }
+
+  if (!replyText && intentResult.intent === 'ally_message' && stepsUsed < stepsBudget) {
+    stepsUsed++;
+    if (toolCallsUsed < toolBudget) {
+      const t0 = Date.now();
+      const safeText = rewriteAllyMessage(text);
+      const t1 = Date.now();
+      toolCalls.push({ tool_name: 'ally_message_rewrite', tool_version: '1.0.0', status: 'ok', latency_ms: t1 - t0, output: { safe_text: safeText } });
+      toolCallsUsed++;
+      logEvent('tool_called', { userId, tool_name: 'ally_message_rewrite', correlationId, input_schema_version: '2026-02-09' });
+      replyText = `${safeText}\n\n你要我再幫你做一個更「簡短版」或更「熱血版」嗎？`;
+    } else {
+      replyText = '我可以幫你把盟友訊息改成更溫和、沒有施壓的版本。你想說的重點是什麼？';
+    }
+  }
+
+  if (!replyText) {
+    replyText = '我先用一句話說重點：我可以幫你把理財問題變簡單、變可執行。\n\n你想做的是：設定目標、查今日任務、白話解釋、週回顧，還是情緒陪跑？';
+  }
+
+  const trace = {
+    intent: intentResult.intent,
+    confidence: intentResult.confidence,
+    steps_used: stepsUsed,
+    max_steps: stepsBudget,
+    tool_calls_used: toolCallsUsed,
+    max_tool_calls: toolBudget,
+    tool_calls: toolCalls,
+    citations,
+    guardrails: { action: 'allow', reason_codes: [] },
+    audit: { correlation_id: correlationId }
+  };
+
+  logEvent('agent_step_completed', { userId, sessionId, correlationId, intent: intentResult.intent, stepsUsed, toolCallsUsed });
+
+  res.json({
+    success: true,
+    replyText,
+    trace,
+    traceText: buildTraceBlock(trace)
+  });
+});
+
+/* ==========================================================
+   小㬢雲 AI 助理管理 — 記憶 / 排程 / 計畫
+   ========================================================== */
+
+/* --- 記憶（對話記錄）--- */
+store.memories = {};  // userId -> [ { id, role, text, timestamp, pinned } ]
+
+app.get('/api/assistant/memory', (req, res) => {
+  const userId = req.query.userId || 'demo';
+  const list = store.memories[userId] || [];
+  res.json({ success: true, total: list.length, messages: list });
+});
+
+app.post('/api/assistant/memory', (req, res) => {
+  const { userId = 'demo', role, text } = req.body;
+  if (!store.memories[userId]) store.memories[userId] = [];
+  const msg = { id: genId('mem'), role, text, timestamp: nowIso(), pinned: false };
+  store.memories[userId].push(msg);
+  res.json({ success: true, message: msg });
+});
+
+app.post('/api/assistant/memory/bulk', (req, res) => {
+  const { userId = 'demo', messages = [] } = req.body;
+  if (!store.memories[userId]) store.memories[userId] = [];
+  const saved = messages.map(m => {
+    const msg = { id: genId('mem'), role: m.role, text: m.text, timestamp: m.timestamp || nowIso(), pinned: false };
+    store.memories[userId].push(msg);
+    return msg;
+  });
+  res.json({ success: true, saved: saved.length });
+});
+
+app.patch('/api/assistant/memory/:id', (req, res) => {
+  const userId = req.body.userId || 'demo';
+  const list = store.memories[userId] || [];
+  const msg = list.find(m => m.id === req.params.id);
+  if (!msg) return res.json({ success: false, error: 'not_found' });
+  if (req.body.pinned !== undefined) msg.pinned = !!req.body.pinned;
+  res.json({ success: true, message: msg });
+});
+
+app.delete('/api/assistant/memory/:id', (req, res) => {
+  const userId = req.query.userId || req.body?.userId || 'demo';
+  if (!store.memories[userId]) return res.json({ success: true });
+  store.memories[userId] = store.memories[userId].filter(m => m.id !== req.params.id);
+  res.json({ success: true });
+});
+
+app.delete('/api/assistant/memory', (req, res) => {
+  const userId = req.query.userId || 'demo';
+  store.memories[userId] = [];
+  res.json({ success: true });
+});
+
+/* --- 排程任務 --- */
+store.schedules = {};  // userId -> [ { id, name, cron, description, enabled, lastRun, nextRun, type } ]
+
+// 預置 demo 排程
+store.schedules.demo = [
+  {
+    id: 'sch_weekly_review',
+    name: '每週日戰績回報',
+    cron: '0 9 * * 0',
+    description: '每週日早上 9:00，小㬢雲自動產生本週戰績摘要與下週建議',
+    enabled: true,
+    type: 'weekly_review',
+    lastRun: null,
+    nextRun: getNextSunday9am(),
+    createdAt: '2026-02-01T00:00:00Z'
+  }
+];
+
+function getNextSunday9am() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = (7 - day) % 7 || 7;
+  const next = new Date(now);
+  next.setDate(now.getDate() + diff);
+  next.setHours(9, 0, 0, 0);
+  return next.toISOString();
+}
+
+app.get('/api/assistant/schedules', (req, res) => {
+  const userId = req.query.userId || 'demo';
+  const list = store.schedules[userId] || [];
+  res.json({ success: true, schedules: list });
+});
+
+app.post('/api/assistant/schedules', (req, res) => {
+  const { userId = 'demo', name, cron, description, type = 'custom', enabled = true } = req.body;
+  if (!store.schedules[userId]) store.schedules[userId] = [];
+  const sch = {
+    id: genId('sch'), name, cron, description, type, enabled,
+    lastRun: null, nextRun: getNextSunday9am(), createdAt: nowIso()
+  };
+  store.schedules[userId].push(sch);
+  logEvent('schedule_created', { userId, scheduleId: sch.id, type });
+  res.json({ success: true, schedule: sch });
+});
+
+app.patch('/api/assistant/schedules/:id', (req, res) => {
+  const userId = req.body.userId || 'demo';
+  const list = store.schedules[userId] || [];
+  const sch = list.find(s => s.id === req.params.id);
+  if (!sch) return res.json({ success: false, error: 'not_found' });
+  if (req.body.name !== undefined) sch.name = req.body.name;
+  if (req.body.cron !== undefined) sch.cron = req.body.cron;
+  if (req.body.description !== undefined) sch.description = req.body.description;
+  if (req.body.enabled !== undefined) sch.enabled = !!req.body.enabled;
+  logEvent('schedule_updated', { userId, scheduleId: sch.id });
+  res.json({ success: true, schedule: sch });
+});
+
+app.delete('/api/assistant/schedules/:id', (req, res) => {
+  const userId = req.query.userId || 'demo';
+  if (!store.schedules[userId]) return res.json({ success: true });
+  store.schedules[userId] = store.schedules[userId].filter(s => s.id !== req.params.id);
+  logEvent('schedule_deleted', { userId, scheduleId: req.params.id });
+  res.json({ success: true });
+});
+
+app.post('/api/assistant/schedules/:id/trigger', (req, res) => {
+  const userId = req.body.userId || 'demo';
+  const list = store.schedules[userId] || [];
+  const sch = list.find(s => s.id === req.params.id);
+  if (!sch) return res.json({ success: false, error: 'not_found' });
+  sch.lastRun = nowIso();
+  sch.nextRun = getNextSunday9am();
+  logEvent('schedule_triggered', { userId, scheduleId: sch.id, type: sch.type });
+
+  // 產生排程任務回報（模擬）
+  const user = store.users[userId] || store.users.demo;
+  const report = {
+    type: sch.type,
+    generatedAt: nowIso(),
+    summary: `📊 ${user.name || '冒險者'} 的每週戰績摘要\n\n` +
+      `🏆 等級：R${user.rank} ${RANK_NAMES[user.rank]}（★${user.stars}）\n` +
+      `⚡ 經驗值：${user.xp} XP\n` +
+      `🔥 連續打卡：${user.streak} 週\n` +
+      `💰 資產總值：156,800 元（目標進度 12%）\n` +
+      `📈 本週報酬：+1.2%\n\n` +
+      `✅ 本週完成 3/6 項任務\n` +
+      `🎯 下週建議：完成盟友加油打氣、回報投資心情\n\n` +
+      `💪 繼續保持，距離下一顆星只差 ${(RANK_THRESHOLDS[user.rank]?.xpPerStar || 60) - user.xp} XP！`
+  };
+  res.json({ success: true, schedule: sch, report });
+});
+
+/* --- 計畫項目（里程碑 & 目標追蹤）--- */
+store.plans = {};  // userId -> [ { id, category, icon, name, description, targetAmount, currentAmount, progress, status, ... } ]
+
+// 預置 demo 計畫
+store.plans.demo = [
+  { id: 'plan_main', category: 'quest_goal', icon: '🏝️', name: '30歲財務自由大冒險', description: '存到第一桶金，提早實現不被工作綁架的人生！',
+    targetAmount: 3000000, currentAmount: 156800, progress: 5.2, status: 'active',
+    monthlyTarget: 15000, monthlyActual: 15000, consecutiveMonths: 6, startDate: '2025-08-01', priority: 1 },
+  { id: 'plan_japan', category: 'quest_goal', icon: '🗼', name: '日本追櫻自由行', description: '明年春天去京都看櫻花、吃和牛、逛中古店 🌸',
+    targetAmount: 80000, currentAmount: 52000, progress: 65, status: 'active',
+    monthlyTarget: 6000, monthlyActual: 6500, consecutiveMonths: 5, startDate: '2025-10-01', priority: 2 },
+  { id: 'plan_macbook', category: 'quest_goal', icon: '💻', name: 'MacBook Pro 換機基金', description: 'M4 Pro 太香了！靠每月存錢不用刷卡分期 🍎',
+    targetAmount: 75000, currentAmount: 62000, progress: 82.7, status: 'active',
+    monthlyTarget: 8000, monthlyActual: 8000, consecutiveMonths: 8, startDate: '2025-06-01', priority: 3 },
+  { id: 'plan_emergency', category: 'quest_goal', icon: '🛡️', name: '緊急備戰金庫', description: '存滿 3 個月薪水的安全網，不怕突發狀況',
+    targetAmount: 100000, currentAmount: 88000, progress: 88, status: 'active',
+    monthlyTarget: 10000, monthlyActual: 10000, consecutiveMonths: 8, startDate: '2025-06-01', priority: 4 },
+  { id: 'ms_first_goal', category: 'milestone', icon: '🎯', name: '許下第一個願望', description: '跟系統說出你的夢想，理財旅程正式 Start！',
+    achieved: true, achievedAt: '2025-08-01', xpReward: 50, status: 'completed' },
+  { id: 'ms_kyc', category: 'milestone', icon: '🛡️', name: '解鎖冒險職業', description: '完成風險評估，知道自己是穩健派還是衝鋒型',
+    achieved: true, achievedAt: '2025-08-02', xpReward: 80, status: 'completed' },
+  { id: 'ms_first_trade', category: 'milestone', icon: '⚔️', name: '第一次出手', description: '按下一鍵下單的那一刻，你已經贏過大多數人！',
+    achieved: true, achievedAt: '2025-08-05', xpReward: 100, status: 'completed' },
+  { id: 'ms_streak4', category: 'milestone', icon: '🔥', name: '連續打卡 4 週', description: '比健身房還持久！投資紀律 MAX',
+    achieved: true, achievedAt: '2025-09-01', xpReward: 40, status: 'completed' },
+  { id: 'ms_r2', category: 'milestone', icon: '🌟', name: '晉級受訓者 R2', description: '薪守村認證的理財練習生！',
+    achieved: true, achievedAt: '2025-12-01', xpReward: 0, status: 'completed' },
+  { id: 'ms_composure', category: 'milestone', icon: '🧘', name: '大跌不恐慌', description: '市場暴跌沒有亂賣，沉著之心 get！',
+    achieved: false, progress: 60, hint: '下次股市大跌時自動觸發', status: 'in_progress' },
+  { id: 'ms_profit10', category: 'milestone', icon: '🏆', name: '獲利破 10%', description: '本金長了 10%！開始懂什麼叫複利了',
+    achieved: false, progress: 35, hint: '目前 +3.5%，加油！', status: 'in_progress' },
+  { id: 'ms_streak12', category: 'milestone', icon: '📅', name: '不間斷 12 週', description: '三個月完美出席！鑽石手就是你',
+    achieved: false, progress: 50, hint: '6/12 週', status: 'in_progress' }
+];
+
+app.get('/api/assistant/plans', (req, res) => {
+  const userId = req.query.userId || 'demo';
+  const list = store.plans[userId] || [];
+  const category = req.query.category; // 'quest_goal' | 'milestone' | undefined (all)
+  const filtered = category ? list.filter(p => p.category === category) : list;
+  res.json({ success: true, total: filtered.length, plans: filtered });
+});
+
+app.post('/api/assistant/plans', (req, res) => {
+  const { userId = 'demo', category = 'quest_goal', icon, name, description, targetAmount, monthlyTarget, status = 'active' } = req.body;
+  if (!store.plans[userId]) store.plans[userId] = [];
+  const plan = {
+    id: genId('plan'), category, icon: icon || '🎯', name, description,
+    targetAmount: targetAmount || 0, currentAmount: 0, progress: 0,
+    monthlyTarget: monthlyTarget || 0, monthlyActual: 0, consecutiveMonths: 0,
+    status, startDate: today(), createdAt: nowIso()
+  };
+  store.plans[userId].push(plan);
+  logEvent('plan_created', { userId, planId: plan.id, category });
+  res.json({ success: true, plan });
+});
+
+app.patch('/api/assistant/plans/:id', (req, res) => {
+  const userId = req.body.userId || 'demo';
+  const list = store.plans[userId] || [];
+  const plan = list.find(p => p.id === req.params.id);
+  if (!plan) return res.json({ success: false, error: 'not_found' });
+  ['name', 'description', 'targetAmount', 'currentAmount', 'monthlyTarget', 'status', 'progress', 'icon'].forEach(k => {
+    if (req.body[k] !== undefined) plan[k] = req.body[k];
+  });
+  logEvent('plan_updated', { userId, planId: plan.id });
+  res.json({ success: true, plan });
+});
+
+app.delete('/api/assistant/plans/:id', (req, res) => {
+  const userId = req.query.userId || 'demo';
+  if (!store.plans[userId]) return res.json({ success: true });
+  store.plans[userId] = store.plans[userId].filter(p => p.id !== req.params.id);
+  logEvent('plan_deleted', { userId, planId: req.params.id });
+  res.json({ success: true });
+});
+
+/* ==========================================================
+   Ollama LLM Proxy（讓前端也能透過同 server 呼叫 Ollama）
+   ========================================================== */
+const OLLAMA_BASE = process.env.OLLAMA_URL || 'http://localhost:11434';
+
+app.get('/api/ollama/health', async (req, res) => {
+  try {
+    const resp = await fetch(OLLAMA_BASE + '/api/tags', { signal: AbortSignal.timeout(3000) });
+    const data = await resp.json();
+    res.json({ ok: true, models: (data.models || []).map(m => m.name) });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/ollama/chat', async (req, res) => {
+  try {
+    const ollamaResp = await fetch(OLLAMA_BASE + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...req.body, stream: false })
+    });
+    if (!ollamaResp.ok) throw new Error('Ollama HTTP ' + ollamaResp.status);
+    const data = await ollamaResp.json();
+    res.json({ success: true, ...data });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// Streaming proxy
+app.post('/api/ollama/chat/stream', async (req, res) => {
+  try {
+    const ollamaResp = await fetch(OLLAMA_BASE + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...req.body, stream: true })
+    });
+    if (!ollamaResp.ok) throw new Error('Ollama HTTP ' + ollamaResp.status);
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    const reader = ollamaResp.body.getReader();
+    const push = async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { res.end(); return; }
+        res.write(value);
+      }
+    };
+    push().catch(() => res.end());
+  } catch (e) {
+    res.status(502).json({ success: false, error: e.message });
+  }
+});
 
 function checkXPLimit(userId, eventType) {
   const config = XP_CONFIG[eventType];

@@ -274,6 +274,15 @@ a:hover{color:var(--color-green-light);}
 .chatbot-input-area input:focus{outline:none;border-color:var(--color-gold);}
 .chatbot-input-area button{width:40px;height:40px;border-radius:50%;background:var(--color-green);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
+/* === Chatbot FAQ Quick Buttons === */
+.chat-faq-wrap{padding:8px 12px;}
+.chat-faq-title{font-size:0.7rem;color:var(--text-muted);text-align:center;margin-bottom:8px;font-weight:600;}
+.chat-faq-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.faq-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border-color);border-radius:var(--radius-pill);background:var(--bg-card);color:var(--text-primary);font-size:0.73rem;font-family:var(--font-main);cursor:pointer;transition:all 0.2s ease;white-space:nowrap;}
+.faq-btn:hover{border-color:var(--color-gold);background:rgba(212,168,67,0.08);transform:translateY(-1px);}
+.faq-icon{font-size:0.85rem;}
+.faq-label{font-weight:500;}
+
 /* === Loading Overlay === */
 .loading-overlay{position:fixed;inset:0;background:#1a2332;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s ease;}
 .loading-overlay.hide{opacity:0;pointer-events:none;}

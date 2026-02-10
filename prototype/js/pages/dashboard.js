@@ -37,6 +37,7 @@ async function initDashboardPage() {
 }
 
 function renderDashboardData(data) {
+  const milestones = normalizeMilestones(data.milestones);
   const totalValue = data.holdings.reduce((s, h) => s + h.currentValue, 0);
   const totalCost = data.holdings.reduce((s, h) => s + h.cost, 0);
   const totalReturn = totalValue - totalCost;
@@ -157,13 +158,13 @@ function renderDashboardData(data) {
         </div>
       </div>
       <div class="dash-milestone-summary">
-        <span class="dms-earned">${data.milestones.filter(m => m.achieved).length}</span>
+        <span class="dms-earned">${milestones.filter(m => m && m.achieved).length}</span>
         <span class="dms-sep">/</span>
-        <span class="dms-total">${data.milestones.length}</span>
+        <span class="dms-total">${milestones.length}</span>
         <span class="dms-label">已達成</span>
       </div>
       <div class="milestones">
-        ${data.milestones.map((m, i) => renderMilestoneItem(m, i)).join('')}
+        ${milestones.map((m, i) => renderDashboardMilestoneItem(m, i)).join('')}
       </div>
     </div>
 
@@ -190,6 +191,21 @@ function renderDashboardData(data) {
       </p>
     </div>
   `;
+}
+
+function normalizeMilestones(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  const fallback = (typeof DataService !== 'undefined' && typeof DataService.getMilestones === 'function')
+    ? DataService.getMilestones()
+    : [];
+
+  const normalized = list.map((item, idx) => {
+    if (!item || typeof item !== 'object') return fallback[idx] || null;
+    const hasTitle = item.title != null || item.name != null;
+    return hasTitle ? item : (fallback[idx] || item);
+  }).filter(Boolean);
+
+  return normalized.length ? normalized : fallback;
 }
 
 /* ====== 任務目標卡片 ====== */
@@ -317,14 +333,24 @@ function renderDriftSection(data, driftAlert) {
 }
 
 /* ====== 里程碑項目 ====== */
-function renderMilestoneItem(m, idx) {
+function renderDashboardMilestoneItem(m, idx) {
+  if (!m) return '';
+  const safeText = (value, fallback = '') => {
+    if (value == null) return fallback;
+    const text = String(value).trim();
+    if (!text || text.toLowerCase() === 'undefined' || text.toLowerCase() === 'null') return fallback;
+    return text;
+  };
+  const title = safeText(m.title ?? m.name, '里程碑');
+  const desc = safeText(m.desc ?? m.description, '');
+  const iconText = m.icon || title.slice(0, 2);
   if (m.achieved) {
     return `
       <div class="milestone-item achieved" style="animation-delay:${idx * 0.05}s;">
-        <div class="milestone-icon earned">${m.title.slice(0, 2)}</div>
+        <div class="milestone-icon earned">${iconText}</div>
         <div class="milestone-info">
-          <div class="milestone-title">${m.title}</div>
-          <div class="milestone-desc">${m.desc}</div>
+          <div class="milestone-title">${title}</div>
+          <div class="milestone-desc">${desc}</div>
           <div class="milestone-meta">
             ${m.achievedAt ? `<span class="ms-date">📅 ${m.achievedAt}</span>` : ''}
             ${m.xpReward ? `<span class="ms-xp">+${m.xpReward} XP</span>` : ''}
@@ -336,10 +362,10 @@ function renderMilestoneItem(m, idx) {
   const hasProg = typeof m.progress === 'number' && m.progress > 0;
   return `
     <div class="milestone-item locked-ms" style="animation-delay:${idx * 0.05}s;">
-      <div class="milestone-icon locked">${m.title.slice(0, 2)}</div>
+      <div class="milestone-icon locked">${iconText}</div>
       <div class="milestone-info">
-        <div class="milestone-title" style="opacity:0.7;">${m.title}</div>
-        <div class="milestone-desc">${m.desc}</div>
+        <div class="milestone-title" style="opacity:0.7;">${title}</div>
+        <div class="milestone-desc">${desc}</div>
         ${hasProg ? `
         <div class="ms-progress">
           <div class="ms-progress-bg">
