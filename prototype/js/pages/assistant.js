@@ -35,6 +35,103 @@ function renderAssistantPage() {
   `;
 }
 
+const ASSISTANT_DEMO_DATA = {
+  memory: [
+    { id: 'demo_mem_1', role: 'user', text: '我想三年存到一百萬買房', timestamp: '2026-02-09T09:00:00Z', pinned: false },
+    { id: 'demo_mem_2', role: 'bot', text: '我先用一句話說重點：我們可以把目標拆成每週可完成的小任務。', timestamp: '2026-02-09T09:00:08Z', pinned: true },
+    { id: 'demo_mem_3', role: 'user', text: '我聽不懂最大回撤', timestamp: '2026-02-09T09:02:00Z', pinned: false }
+  ],
+  schedules: [
+    {
+      id: 'demo_sch_1',
+      name: '每週日戰績回報',
+      description: '每週日 09:00 自動產生本週戰績摘要與下週建議',
+      cron: '0 9 * * 0',
+      type: 'weekly_review',
+      enabled: true,
+      nextRun: '2026-02-16T01:00:00Z',
+      lastRun: '2026-02-09T01:00:00Z'
+    }
+  ],
+  plans: [
+    {
+      id: 'demo_plan_1',
+      category: 'quest_goal',
+      name: '日本追櫻自由行',
+      description: '明年春天去京都看櫻花、吃和牛',
+      icon: '🗼',
+      targetAmount: 80000,
+      currentAmount: 52000,
+      monthlyTarget: 6000,
+      consecutiveMonths: 5,
+      status: 'active'
+    },
+    {
+      id: 'demo_plan_2',
+      category: 'quest_goal',
+      name: 'MacBook Pro 換機基金',
+      description: 'M4 Pro 太香了！靠每月存錢不用刷卡分期',
+      icon: '💻',
+      targetAmount: 75000,
+      currentAmount: 62000,
+      monthlyTarget: 8000,
+      consecutiveMonths: 8,
+      status: 'active'
+    },
+    {
+      id: 'demo_ms_1',
+      category: 'milestone',
+      title: '🎯 許下第一個願望',
+      desc: '跟系統說出你的夢想，理財旅程正式 Start！',
+      achieved: true,
+      achievedAt: '2025-08-01'
+    },
+    {
+      id: 'demo_ms_2',
+      category: 'milestone',
+      title: '💰 投資滿 3 個月',
+      desc: '持續定期定額',
+      progress: 60,
+      hint: '再堅持 2 個月就達成'
+    }
+  ]
+};
+
+let assistantDemoMode = false;
+
+async function fetchJsonOrNull(url, options) {
+  try {
+    const resp = await fetch(url, options);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) throw new Error('non-json');
+    const data = await resp.json();
+    assistantDemoMode = false;
+    return data;
+  } catch (e) {
+    assistantDemoMode = true;
+    return null;
+  }
+}
+
+function getDemoBanner() {
+  if (!assistantDemoMode) return '';
+  return `
+    <div class="card mb-2" style="border-left:4px solid var(--color-blue);">
+      <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
+        <i class="fas fa-circle-info" style="color:var(--color-blue);"></i>
+        目前為 <strong>靜態 DEMO 模式</strong>（API 不可用），顯示示範資料。
+      </p>
+    </div>
+  `;
+}
+
+function requireAssistantApi() {
+  if (!assistantDemoMode) return true;
+  showToast('目前為靜態 DEMO 模式，無法寫入或更新資料', 'warning');
+  return false;
+}
+
 function initAssistantPage() {
   switchAssistantTab('memory');
 }
@@ -56,39 +153,37 @@ async function loadMemoryTab() {
   if (!panel) return;
   panel.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">載入中...</div>';
 
-  try {
-    const userId = AppState?.user?.id || 'demo';
-    const resp = await fetch(`/api/assistant/memory?userId=${userId}`);
-    const data = await resp.json();
-    const msgs = data.messages || [];
+  const userId = AppState?.user?.id || 'demo';
+  const data = await fetchJsonOrNull(`/api/assistant/memory?userId=${userId}`);
+  const msgs = data?.messages || ASSISTANT_DEMO_DATA.memory;
+  const demoBanner = getDemoBanner();
 
-    if (msgs.length === 0) {
-      panel.innerHTML = `
-        <div class="card" style="text-align:center;padding:40px;">
-          <div style="font-size:2rem;margin-bottom:12px;">🧠</div>
-          <h3 style="margin-bottom:8px;">尚無對話記憶</h3>
-          <p style="font-size:0.82rem;color:var(--text-secondary);">與小㬢雲聊天後，對話記錄會自動保存到這裡。</p>
-        </div>
-      `;
-      return;
-    }
-
+  if (msgs.length === 0) {
     panel.innerHTML = `
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header">
-          <h3><i class="fas fa-brain"></i> 對話記憶（${msgs.length} 筆）</h3>
-          <button class="btn btn-sm btn-danger" onclick="clearAllMemory()">
-            <i class="fas fa-trash"></i> 清除全部
-          </button>
-        </div>
-        <div class="memory-list" id="memoryList">
-          ${msgs.map(m => renderMemoryItem(m)).join('')}
-        </div>
+      ${demoBanner}
+      <div class="card" style="text-align:center;padding:40px;">
+        <div style="font-size:2rem;margin-bottom:12px;">🧠</div>
+        <h3 style="margin-bottom:8px;">尚無對話記憶</h3>
+        <p style="font-size:0.82rem;color:var(--text-secondary);">與小㬢雲聊天後，對話記錄會自動保存到這裡。</p>
       </div>
     `;
-  } catch (e) {
-    panel.innerHTML = '<div class="card" style="color:var(--color-red);">載入失敗：' + e.message + '</div>';
+    return;
   }
+
+  panel.innerHTML = `
+    ${demoBanner}
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h3><i class="fas fa-brain"></i> 對話記憶（${msgs.length} 筆）</h3>
+        <button class="btn btn-sm btn-danger" onclick="clearAllMemory()">
+          <i class="fas fa-trash"></i> 清除全部
+        </button>
+      </div>
+      <div class="memory-list" id="memoryList">
+        ${msgs.map(m => renderMemoryItem(m)).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function renderMemoryItem(m) {
@@ -120,6 +215,7 @@ function renderMemoryItem(m) {
 }
 
 async function togglePinMemory(id, pinned) {
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   await fetch(`/api/assistant/memory/${id}`, {
     method: 'PATCH',
@@ -131,6 +227,7 @@ async function togglePinMemory(id, pinned) {
 
 async function deleteMemory(id) {
   if (!confirm('確定要刪除這筆記錄嗎？')) return;
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   await fetch(`/api/assistant/memory/${id}?userId=${userId}`, { method: 'DELETE' });
   const el = document.getElementById('mem-' + id);
@@ -140,6 +237,7 @@ async function deleteMemory(id) {
 
 async function clearAllMemory() {
   if (!confirm('確定要清除所有對話記憶嗎？此操作無法復原。')) return;
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   await fetch(`/api/assistant/memory?userId=${userId}`, { method: 'DELETE' });
   showToast('對話記憶已清除', 'info');
@@ -152,32 +250,29 @@ async function loadSchedulesTab() {
   if (!panel) return;
   panel.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">載入中...</div>';
 
-  try {
-    const userId = AppState?.user?.id || 'demo';
-    const resp = await fetch(`/api/assistant/schedules?userId=${userId}`);
-    const data = await resp.json();
-    const list = data.schedules || [];
+  const userId = AppState?.user?.id || 'demo';
+  const data = await fetchJsonOrNull(`/api/assistant/schedules?userId=${userId}`);
+  const list = data?.schedules || ASSISTANT_DEMO_DATA.schedules;
+  const demoBanner = getDemoBanner();
 
-    panel.innerHTML = `
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header">
-          <h3><i class="fas fa-clock"></i> 排程任務</h3>
-          <button class="btn btn-sm btn-primary" onclick="showNewScheduleForm()">
-            <i class="fas fa-plus"></i> 新增排程
-          </button>
-        </div>
-        <div id="newScheduleForm" style="display:none;margin-bottom:16px;">
-          ${renderNewScheduleForm()}
-        </div>
-        <div id="schedulesList">
-          ${list.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:20px;">尚未設定排程</p>' : list.map(s => renderScheduleItem(s)).join('')}
-        </div>
+  panel.innerHTML = `
+    ${demoBanner}
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h3><i class="fas fa-clock"></i> 排程任務</h3>
+        <button class="btn btn-sm btn-primary" onclick="showNewScheduleForm()">
+          <i class="fas fa-plus"></i> 新增排程
+        </button>
       </div>
-      <div id="scheduleReportArea"></div>
-    `;
-  } catch (e) {
-    panel.innerHTML = '<div class="card" style="color:var(--color-red);">載入失敗：' + e.message + '</div>';
-  }
+      <div id="newScheduleForm" style="display:none;margin-bottom:16px;">
+        ${renderNewScheduleForm()}
+      </div>
+      <div id="schedulesList">
+        ${list.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:20px;">尚未設定排程</p>' : list.map(s => renderScheduleItem(s)).join('')}
+      </div>
+    </div>
+    <div id="scheduleReportArea"></div>
+  `;
 }
 
 function renderNewScheduleForm() {
@@ -265,6 +360,7 @@ function renderScheduleItem(s) {
 }
 
 async function createSchedule() {
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   const body = {
     userId,
@@ -283,6 +379,7 @@ async function createSchedule() {
 }
 
 async function toggleScheduleEnabled(id, enabled) {
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   await fetch(`/api/assistant/schedules/${id}`, {
     method: 'PATCH',
@@ -294,6 +391,7 @@ async function toggleScheduleEnabled(id, enabled) {
 
 async function deleteSchedule(id) {
   if (!confirm('確定要刪除此排程？')) return;
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   await fetch(`/api/assistant/schedules/${id}?userId=${userId}`, { method: 'DELETE' });
   showToast('排程已刪除', 'info');
@@ -301,6 +399,23 @@ async function deleteSchedule(id) {
 }
 
 async function triggerSchedule(id) {
+  if (!requireAssistantApi()) {
+    const area = document.getElementById('scheduleReportArea');
+    if (area) {
+      area.innerHTML = `
+        <div class="card" style="border:2px solid var(--color-gold);animation:fadeIn 0.5s ease;">
+          <div class="card-header">
+            <h3><i class="fas fa-scroll"></i> 排程回報結果（DEMO）</h3>
+            <span style="font-size:0.7rem;color:var(--text-muted);">${new Date().toLocaleString('zh-TW')}</span>
+          </div>
+          <pre style="white-space:pre-wrap;font-family:var(--font-main);font-size:0.85rem;line-height:1.7;color:var(--text-primary);">本週總資產小幅上升，任務完成率 67%。
+建議：維持定期定額、檢查目標進度、下週保持同樣節奏。</pre>
+        </div>
+      `;
+    }
+    showToast('排程已手動觸發（DEMO）', 'success');
+    return;
+  }
   const userId = AppState?.user?.id || 'demo';
   const resp = await fetch(`/api/assistant/schedules/${id}/trigger`, {
     method: 'POST',
@@ -332,44 +447,41 @@ async function loadPlansTab() {
   if (!panel) return;
   panel.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);">載入中...</div>';
 
-  try {
-    const userId = AppState?.user?.id || 'demo';
-    const resp = await fetch(`/api/assistant/plans?userId=${userId}`);
-    const data = await resp.json();
-    const plans = data.plans || [];
-    const goals = plans.filter(p => p.category === 'quest_goal');
-    const milestones = plans.filter(p => p.category === 'milestone');
+  const userId = AppState?.user?.id || 'demo';
+  const data = await fetchJsonOrNull(`/api/assistant/plans?userId=${userId}`);
+  const plans = data?.plans || ASSISTANT_DEMO_DATA.plans;
+  const goals = plans.filter(p => p.category === 'quest_goal');
+  const milestones = plans.filter(p => p.category === 'milestone');
+  const demoBanner = getDemoBanner();
 
-    panel.innerHTML = `
-      <!-- 目標追蹤 -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header">
-          <h3><i class="fas fa-bullseye"></i> 目標追蹤（${goals.length}）</h3>
-          <button class="btn btn-sm btn-primary" onclick="showNewPlanForm()">
-            <i class="fas fa-plus"></i> 新增目標
-          </button>
-        </div>
-        <div id="newPlanForm" style="display:none;margin-bottom:16px;">
-          ${renderNewPlanForm()}
-        </div>
-        <div id="goalsList">
-          ${goals.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:20px;">尚未設定目標</p>' : goals.map(g => renderPlanGoalItem(g)).join('')}
-        </div>
+  panel.innerHTML = `
+    ${demoBanner}
+    <!-- 目標追蹤 -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h3><i class="fas fa-bullseye"></i> 目標追蹤（${goals.length}）</h3>
+        <button class="btn btn-sm btn-primary" onclick="showNewPlanForm()">
+          <i class="fas fa-plus"></i> 新增目標
+        </button>
       </div>
+      <div id="newPlanForm" style="display:none;margin-bottom:16px;">
+        ${renderNewPlanForm()}
+      </div>
+      <div id="goalsList">
+        ${goals.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:20px;">尚未設定目標</p>' : goals.map(g => renderPlanGoalItem(g)).join('')}
+      </div>
+    </div>
 
-      <!-- 里程碑 -->
-      <div class="card">
-        <div class="card-header">
-          <h3><i class="fas fa-trophy"></i> 里程碑（${milestones.length}）</h3>
-        </div>
-        <div class="milestones-grid" id="milestonesList">
-          ${milestones.map(m => renderMilestoneItem(m)).join('')}
-        </div>
+    <!-- 里程碑 -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-trophy"></i> 里程碑（${milestones.length}）</h3>
       </div>
-    `;
-  } catch (e) {
-    panel.innerHTML = '<div class="card" style="color:var(--color-red);">載入失敗：' + e.message + '</div>';
-  }
+      <div class="milestones-grid" id="milestonesList">
+        ${milestones.map(m => renderMilestoneItem(m)).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function renderNewPlanForm() {
@@ -475,6 +587,7 @@ function renderMilestoneItem(m) {
 }
 
 async function createPlan() {
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   const body = {
     userId,
@@ -496,6 +609,7 @@ async function createPlan() {
 
 async function deletePlan(id) {
   if (!confirm('確定要刪除此計畫/目標？')) return;
+  if (!requireAssistantApi()) return;
   const userId = AppState?.user?.id || 'demo';
   await fetch(`/api/assistant/plans/${id}?userId=${userId}`, { method: 'DELETE' });
   showToast('已刪除', 'info');

@@ -188,6 +188,9 @@ function navigateTo(page) {
     showToast('此任務尚未解鎖，請先完成前置任務', 'warning');
     return;
   }
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    closeSidebar();
+  }
   AppState.currentPage = page;
   // Update nav active state
   document.querySelectorAll('.quest-nav .nav-item').forEach(i => {
@@ -283,8 +286,21 @@ function toggleTheme() {
 }
 
 /* --- Sidebar Toggle (mobile) --- */
+function setSidebarOpen(isOpen) {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.toggle('open', isOpen);
+  if (overlay) overlay.classList.toggle('active', isOpen);
+}
+
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  setSidebarOpen(!sidebar.classList.contains('open'));
+}
+
+function closeSidebar() {
+  setSidebarOpen(false);
 }
 
 /* --- Toast Notifications --- */
