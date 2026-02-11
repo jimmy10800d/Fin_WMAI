@@ -46,6 +46,8 @@ Fin_WMAI/
 ├── prototype/                 # Prototype 應用
 │   ├── server.js             # Node.js Express 後端伺服器
 │   ├── package.json          # 專案依賴配置
+│   ├── package-lock.json     # 依賴鎖定檔
+│   ├── README.md             # Prototype 使用說明
 │   ├── index.html            # 主應用程式入口（SPA）
 │   ├── portal.html           # 入口導航頁
 │   ├── login.html            # 使用者登入頁面
@@ -58,6 +60,7 @@ Fin_WMAI/
 │   │   ├── chatbot.js        # AI 聊天機器人（小曦雲）— Agent + Ollama 混合模式
 │   │   ├── login.js          # 登入邏輯
 │   │   ├── data-service.js   # 資料服務
+│   │   ├── demo.js           # Demo 腳本
 │   │   └── pages/            # 各頁面模組
 │   │       ├── home.js       # 村莊廣場
 │   │       ├── goals.js      # 啟蒙目標設定
@@ -69,14 +72,24 @@ Fin_WMAI/
 │   │       ├── allies.js     # 盟友系統
 │   │       └── assistant.js  # AI 助理管理（記憶/排程/計畫）
 │   ├── admin/                # 後台管理系統
+│   │   ├── index.html         # 後台入口
+│   │   ├── login.html         # 後台登入
+│   │   ├── css/               # 後台樣式
+│   │   │   └── admin.css      # 後台樣式主檔
+│   │   └── js/                # 後台腳本
+│   │       ├── admin.js       # 後台功能
+│   │       └── login.js       # 後台登入邏輯
 │   ├── data/                 # Demo 資料
 │   │   ├── demo-data.json    # 客戶/帳戶模擬資料
 │   │   └── agent-demo.json   # Agent Demo KB/情境/範本
 │   ├── IP_ICON/              # IP 角色圖示（8 款表情）
 │   └── tests/                # 測試檔案
+│       ├── bdd-tests.html    # BDD 測試頁
 │       └── run-tests.js      # API 測試（38 項）
 ├── DOC/                      # 歷史文件
 ├── IP_ICON/                  # 原始 IP 圖示資源
+├── start-prototype.ps1        # 一鍵啟動腳本
+├── package-lock.json          # 根目錄依賴鎖定檔
 ├── README.md                 # 本文件
 ├── 使用者手冊.md              # 使用者操作指南
 ├── 系統維護手冊.md            # 系統管理與維護
